@@ -1,17 +1,39 @@
-"""Sistema de logs de deobfuscação."""
-import io
+"""Sistema de logs de deobfuscacao."""
+import os
+import json
 import discord
 from discord.ext import commands
 
-LOG_CHANNELS = {}  # {guild_id: channel_id}
+LOG_FILE = "/app/log_channels.json"
+
+
+def _load_channels():
+    if os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+
+def _save_channels(channels):
+    with open(LOG_FILE, "w") as f:
+        json.dump(channels, f)
 
 
 def set_log_channel(guild_id: int, channel_id: int) -> None:
-    LOG_CHANNELS[guild_id] = channel_id
+    channels = _load_channels()
+    channels[str(guild_id)] = channel_id
+    _save_channels(channels)
 
 
 def get_log_channel(guild_id: int) -> int | None:
-    return LOG_CHANNELS.get(guild_id)
+    channels = _load_channels()
+    return channels.get(str(guild_id))
+
+
+def remove_log_channel(guild_id: int) -> None:
+    channels = _load_channels()
+    channels.pop(str(guild_id), None)
+    _save_channels(channels)
 
 
 async def send_log(
@@ -22,7 +44,7 @@ async def send_log(
     file_name: str,
     deobf_content: str
 ) -> None:
-    """Envia log de deobfuscação pro canal configurado."""
+    """Envia log de deobfuscacao pro canal configurado."""
     channel_id = get_log_channel(guild_id)
     if not channel_id:
         return
@@ -32,16 +54,16 @@ async def send_log(
         return
 
     embed = discord.Embed(
-        title="Deobfuscação Realizada",
+        title="Deobfuscacao Realizada",
         color=0x00FF00,
         timestamp=discord.utils.utcnow()
     )
-    embed.add_field(name="Usuário", value=f"{user.mention} (`{user.id}`)", inline=False)
+    embed.add_field(name="Usuario", value=f"{user.mention} (`{user.id}`)", inline=False)
     embed.add_field(name="Tipo", value=f"`{deobf_type}`", inline=True)
     embed.add_field(name="Arquivo", value=f"`{file_name}`", inline=True)
 
     file = discord.File(
-        fp=io.BytesIO(deobf_content.encode()),
+        fp=__import__("io").BytesIO(deobf_content.encode()),
         filename=file_name
     )
     await channel.send(embed=embed, file=file)
