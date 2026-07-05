@@ -1,54 +1,56 @@
-"""Wrapper pro Prometheus Deobfuscator V1 (Python)."""
+"""Wrapper para API Speack de deobfuscacao."""
 import os
-import re
-import subprocess
+import requests
 import tempfile
 
-V1_PATH = "/app/deob-v1"
+API_URL = "https://proving-staining-monitor.ngrok-free.dev/speack/api/v1/deobf"
 
 
-def deobfuscate(code: str, mode: str = "prometheus") -> str:
-    """Roda o pol.py do V1 no código fornecido.
+def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
+    """Envia codigo para a API Speack e retorna o deobfuscado.
 
     Args:
-        code: Código Lua ofuscado.
-        mode: 'prometheus', 'moonsecv3', ou 'moonsecv2'.
+        code: Codigo Lua ofuscado.
+        mode: 'moonsecv3', 'moonsecv2', 'prometheus' (a API detecta automaticamente).
 
     Returns:
-        Código deobfuscado.
+        Codigo deobfuscado.
     """
-    if not os.path.exists(V1_PATH):
-        raise FileNotFoundError(f"V1 não encontrado em {V1_PATH}")
-
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
         tmp_path = f.name
 
     try:
-        env = os.environ.copy()
-        env["PYTHONPATH"] = V1_PATH
+        with open(tmp_path, "rb") as f:
+            response = requests.post(
+                API_URL,
+                files={"file": f},
+                timeout=120
+            )
 
-        result = subprocess.run(
-            ["python", os.path.join(V1_PATH, "pol.py"), tmp_path],
-            capture_output=True,
-            text=True,
-            cwd=V1_PATH,
-            env=env,
-            timeout=60
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"Erro da API: HTTP {response.status_code} - {response.text}"
+    except requests.RequestException as e:
+        return f"Erro de conexao: {e}"
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+
+def deobfuscate_from_url(url: str, mode: str = "moonsecv3") -> str:
+    """Envia URL para a API Speack e retorna o deobfuscado."""
+    try:
+        response = requests.post(
+            API_URL,
+            data={"url": url},
+            timeout=120
         )
 
-        output_path = tmp_path.replace(".lua", "_deobf.lua")
-        if os.path.exists(output_path):
-            with open(output_path, "r") as f:
-                return f.read()
-
-        if result.stdout:
-            return result.stdout
-        if result.stderr:
-            return f"Erro: {result.stderr}"
-
-        return "Não foi possível deobfuscar."
-    finally:
-        for p in (tmp_path, tmp_path.replace(".lua", "_deobf.lua")):
-            if os.path.exists(p):
-                os.unlink(p)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"Erro da API: HTTP {response.status_code} - {response.text}"
+    except requests.RequestException as e:
+        return f"Erro de conexao: {e}"
