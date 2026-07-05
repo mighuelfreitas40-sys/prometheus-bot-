@@ -1,4 +1,4 @@
-"""Moonsec Deobfuscator Bot - Discord (API Speack)."""
+"""Deobfuscator Bot - Discord (API Speack)."""
 import os
 import io
 import aiohttp
@@ -34,117 +34,130 @@ def has_manage_guild(interaction: discord.Interaction) -> bool:
     )
 
 
-async def _get_code(interaction, url, arquivo):
+# ========== DELOBF COMMAND COM SELECT MENU ==========
+
+class DeobfSelect(discord.ui.Select):
+    def __init__(self, code_or_url: str, is_url: bool, file_name: str):
+        self.code_or_url = code_or_url
+        self.is_url = is_url
+        self.file_name = file_name
+
+        options = [
+            discord.SelectOption(label="Moonsec V3", value="moonsecv3", description="Para scripts ofuscados com Moonsec V3"),
+            discord.SelectOption(label="WeAreDevs", value="wearedevs", description="Para scripts ofuscados com WeAreDevs"),
+            discord.SelectOption(label="Hercules", value="hercules", description="Para scripts ofuscados com Hercules"),
+            discord.SelectOption(label="IronVeil", value="ironveil", description="Para scripts ofuscados com IronVeil"),
+        ]
+        super().__init__(placeholder="Selecione o desfuscador", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        mode = self.values[0]
+        label = mode.upper()
+
+        await interaction.response.defer(ephemeral=False)
+
+        try:
+            if self.is_url:
+                result = v1.deobfuscate_from_url(self.code_or_url, mode=mode)
+            else:
+                result = v1.deobfuscate(self.code_or_url, mode=mode)
+
+            if result.startswith("Erro"):
+                await interaction.followup.send(f"Deobfuscacao **{label}** falhou: {result}", ephemeral=True)
+                return
+
+            # Envia na DM
+            try:
+                dm = await interaction.user.create_dm()
+                buffer = io.BytesIO(result.encode())
+                file = discord.File(fp=buffer, filename=self.file_name)
+                await dm.send(
+                    f"Deobfuscacao **{label}** concluida! Aqui esta o seu script:",
+                    file=file
+                )
+
+                # Confirma no canal publico
+                await interaction.followup.send(
+                    f"Script desfuscado e enviado na DM de {interaction.user.mention}!",
+                    ephemeral=False
+                )
+
+                # Log
+                await logs.send_log(
+                    bot, interaction.guild_id, interaction.user,
+                    mode, self.file_name, result
+                )
+
+            except discord.Forbidden:
+                await interaction.followup.send(
+                    f"Nao consegui enviar DM para {interaction.user.mention}. Verifique suas configuracoes de privacidade.",
+                    ephemeral=False
+                )
+
+        except Exception as e:
+            await interaction.followup.send(f"Erro: {e}", ephemeral=True)
+
+
+class DeobfView(discord.ui.View):
+    def __init__(self, code_or_url: str, is_url: bool, file_name: str):
+        super().__init__(timeout=60)
+        self.add_item(DeobfSelect(code_or_url, is_url, file_name))
+
+
+@bot.tree.command(name="deobf", description="Deobfusca codigo Lua")
+@app_commands.describe(
+    url="URL do codigo ofuscado",
+    arquivo="Arquivo .lua ofuscado"
+)
+async def deobf(
+    interaction: discord.Interaction,
+    url: str = None,
+    arquivo: discord.Attachment = None
+):
+    await interaction.response.defer(ephemeral=False)
+
     if not url and not arquivo:
         await interaction.followup.send("Envie uma URL ou um arquivo.", ephemeral=True)
-        return None, None
+        return
     if url and arquivo:
         await interaction.followup.send("Escolha apenas uma opcao: URL ou arquivo.", ephemeral=True)
-        return None, None
-
-    if url:
-        return url, "deobfuscated.lua"
-    else:
-        code = (await arquivo.read()).decode("utf-8", errors="replace")
-        return code, arquivo.filename.replace(".lua", "_deobf.lua")
-
-
-async def _send_result(interaction, result, file_name, label, deobf_type):
-    if result.startswith("Erro"):
-        await interaction.followup.send(f"Deobfuscacao **{label}** falhou: {result}", ephemeral=True)
-        return
-
-    buffer = io.BytesIO(result.encode())
-    file = discord.File(fp=buffer, filename=file_name)
-
-    await interaction.followup.send(
-        f"Deobfuscacao **{label}** concluida para {interaction.user.mention}!",
-        file=file,
-        ephemeral=False
-    )
-
-    await logs.send_log(
-        bot, interaction.guild_id, interaction.user,
-        deobf_type, file_name, result
-    )
-
-
-# ========== SLASH COMMANDS ==========
-
-@bot.tree.command(name="deobf_moonsecv3", description="Deobfusca codigo Lua usando Moonsec V3")
-@app_commands.describe(
-    url="URL do codigo ofuscado",
-    arquivo="Arquivo .lua ofuscado"
-)
-async def deobf_moonsecv3(
-    interaction: discord.Interaction,
-    url: str = None,
-    arquivo: discord.Attachment = None
-):
-    await interaction.response.defer(ephemeral=True)
-    code_or_url, file_name = await _get_code(interaction, url, arquivo)
-    if code_or_url is None:
         return
 
     try:
         if url:
-            result = v1.deobfuscate_from_url(code_or_url, mode="moonsecv3")
+            code = await fetch_url(url)
+            detected = verify.detect_obfuscator(code)
+            code_or_url = url
+            is_url = True
+            file_name = "deobfuscated.lua"
         else:
-            result = v1.deobfuscate(code_or_url, mode="moonsecv3")
-        await _send_result(interaction, result, file_name, "Moonsec V3", "moonsecv3")
+            code = (await arquivo.read()).decode("utf-8", errors="replace")
+            detected = verify.detect_obfuscator(code)
+            code_or_url = code
+            is_url = False
+            file_name = arquivo.filename.replace(".lua", "_deobf.lua")
+
+        # Sugere o desfuscador mais util
+        suggestion = detected if detected != "unknown" else "moonsecv3"
+        suggestion_label = suggestion.upper()
+
+        embed = discord.Embed(
+            title="Selecione o desfuscador",
+            description=f"Obfuscador detectado: `{detected.upper() if detected != 'unknown' else 'Nao detectado'}`\n\n"
+                        f"Desfuscador recomendado: **{suggestion_label}**",
+            color=0x9B59B6,
+            timestamp=discord.utils.utcnow()
+        )
+        embed.set_footer(text=f"Solicitado por {interaction.user}")
+
+        view = DeobfView(code_or_url, is_url, file_name)
+        await interaction.followup.send(embed=embed, view=view, ephemeral=False)
+
     except Exception as e:
         await interaction.followup.send(f"Erro: {e}", ephemeral=True)
 
 
-@bot.tree.command(name="deobf_moonsecv2", description="Deobfusca codigo Lua usando Moonsec V2")
-@app_commands.describe(
-    url="URL do codigo ofuscado",
-    arquivo="Arquivo .lua ofuscado"
-)
-async def deobf_moonsecv2(
-    interaction: discord.Interaction,
-    url: str = None,
-    arquivo: discord.Attachment = None
-):
-    await interaction.response.defer(ephemeral=True)
-    code_or_url, file_name = await _get_code(interaction, url, arquivo)
-    if code_or_url is None:
-        return
-
-    try:
-        if url:
-            result = v1.deobfuscate_from_url(code_or_url, mode="moonsecv2")
-        else:
-            result = v1.deobfuscate(code_or_url, mode="moonsecv2")
-        await _send_result(interaction, result, file_name, "Moonsec V2", "moonsecv2")
-    except Exception as e:
-        await interaction.followup.send(f"Erro: {e}", ephemeral=True)
-
-
-@bot.tree.command(name="deobf_wearedevs", description="Deobfusca codigo Lua usando WeAreDevs")
-@app_commands.describe(
-    url="URL do codigo ofuscado",
-    arquivo="Arquivo .lua ofuscado"
-)
-async def deobf_wearedevs(
-    interaction: discord.Interaction,
-    url: str = None,
-    arquivo: discord.Attachment = None
-):
-    await interaction.response.defer(ephemeral=True)
-    code_or_url, file_name = await _get_code(interaction, url, arquivo)
-    if code_or_url is None:
-        return
-
-    try:
-        if url:
-            result = v1.deobfuscate_from_url(code_or_url, mode="wearedevs")
-        else:
-            result = v1.deobfuscate(code_or_url, mode="wearedevs")
-        await _send_result(interaction, result, file_name, "WeAreDevs", "wearedevs")
-    except Exception as e:
-        await interaction.followup.send(f"Erro: {e}", ephemeral=True)
-
+# ========== VERIFY COMMAND ==========
 
 @bot.tree.command(name="verify", description="Verifica qual obfuscador foi usado no codigo")
 @app_commands.describe(
@@ -191,19 +204,19 @@ async def verify_cmd(
         await interaction.followup.send(f"Erro: {e}", ephemeral=True)
 
 
+# ========== HELP COMMAND ==========
+
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
 async def help_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
-        title="Moonsec Deobfuscator Bot",
+        title="Deobfuscator Bot",
         description="Bot de deobfuscacao de scripts Lua via API Speack.",
         color=0x9B59B6,
         timestamp=discord.utils.utcnow()
     )
 
     deobf_text = (
-        "`/deobf_moonsecv3 <url|arquivo>` — Deobfusca com Moonsec V3\n"
-        "`/deobf_moonsecv2 <url|arquivo>` — Deobfusca com Moonsec V2\n"
-        "`/deobf_wearedevs <url|arquivo>` — Deobfusca com WeAreDevs\n"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil)\n"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
@@ -293,7 +306,7 @@ async def bot_enabled_check(interaction: discord.Interaction) -> bool:
     return BOT_ENABLED.get(interaction.guild_id, True)
 
 
-for cmd_name in ("deobf_moonsecv3", "deobf_moonsecv2", "deobf_wearedevs", "verify", "help"):
+for cmd_name in ("deobf", "verify", "help"):
     cmd = bot.tree.get_command(cmd_name)
     if cmd:
         cmd.add_check(bot_enabled_check)
