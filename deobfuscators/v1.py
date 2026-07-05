@@ -6,12 +6,20 @@ import tempfile
 API_URL = "https://proving-staining-monitor.ngrok-free.dev/speack/api/v1/deobf"
 
 
+def _clean_output(text: str) -> str:
+    """Remove o header da API Speack e substitui por header proprio."""
+    lines = text.splitlines()
+    if lines and "Speack" in lines[0]:
+        lines[0] = "-- Deobf by NzAprendiz | https://discord.gg/nFHUEyG6MS"
+    return "\n".join(lines)
+
+
 def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
     """Envia codigo para a API Speack e retorna o deobfuscado.
 
     Args:
         code: Codigo Lua ofuscado.
-        mode: 'moonsecv3', 'moonsecv2', 'prometheus' (a API detecta automaticamente).
+        mode: 'moonsecv3', 'moonsecv2', 'wearedevs', 'prometheus'.
 
     Returns:
         Codigo deobfuscado.
@@ -29,7 +37,7 @@ def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
             )
 
         if response.status_code == 200:
-            return response.text
+            return _clean_output(response.text)
         else:
             return f"Erro da API: HTTP {response.status_code} - {response.text}"
     except requests.RequestException as e:
@@ -49,7 +57,7 @@ def deobfuscate_from_url(url: str, mode: str = "moonsecv3") -> str:
         )
 
         if response.status_code == 200:
-            return response.text
+            return _clean_output(response.text)
         else:
             return f"Erro da API: HTTP {response.status_code} - {response.text}"
     except requests.RequestException as e:
