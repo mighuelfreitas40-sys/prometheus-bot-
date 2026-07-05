@@ -15,15 +15,7 @@ def _clean_output(text: str) -> str:
 
 
 def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
-    """Envia codigo para a API Speack e retorna o deobfuscado.
-
-    Args:
-        code: Codigo Lua ofuscado.
-        mode: 'moonsecv3', 'moonsecv2', 'wearedevs', 'prometheus'.
-
-    Returns:
-        Codigo deobfuscado.
-    """
+    """Envia codigo para a API Speack e retorna o deobfuscado."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
         tmp_path = f.name
