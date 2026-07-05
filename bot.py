@@ -16,10 +16,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
-# ========== HELPERS ==========
-
 async def fetch_url(url: str) -> str:
-    """Baixa conteudo de uma URL."""
     async with aiohttp.ClientSession() as session:
         async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
             if resp.status != 200:
@@ -33,8 +30,6 @@ def has_manage_guild(interaction: discord.Interaction) -> bool:
         or interaction.user.guild_permissions.administrator
     )
 
-
-# ========== DELOBF COMMAND COM SELECT MENU ==========
 
 class DeobfSelect(discord.ui.Select):
     def __init__(self, code_or_url: str, is_url: bool, file_name: str):
@@ -66,7 +61,7 @@ class DeobfSelect(discord.ui.Select):
                 await interaction.followup.send(f"Deobfuscacao **{label}** falhou: {result}", ephemeral=True)
                 return
 
-            # Envia na DM
+            dm_sent = False
             try:
                 dm = await interaction.user.create_dm()
                 buffer = io.BytesIO(result.encode())
@@ -75,24 +70,28 @@ class DeobfSelect(discord.ui.Select):
                     f"Deobfuscacao **{label}** concluida! Aqui esta o seu script:",
                     file=file
                 )
+                dm_sent = True
+            except discord.Forbidden:
+                dm_sent = False
 
-                # Confirma no canal publico
+            if dm_sent:
                 await interaction.followup.send(
                     f"Script desfuscado e enviado na DM de {interaction.user.mention}!",
                     ephemeral=False
                 )
-
-                # Log
-                await logs.send_log(
-                    bot, interaction.guild_id, interaction.user,
-                    mode, self.file_name, result
-                )
-
-            except discord.Forbidden:
+            else:
+                buffer = io.BytesIO(result.encode())
+                file = discord.File(fp=buffer, filename=self.file_name)
                 await interaction.followup.send(
-                    f"Nao consegui enviar DM para {interaction.user.mention}. Verifique suas configuracoes de privacidade.",
+                    f"Nao consegui enviar DM para {interaction.user.mention}. Aqui esta o arquivo:",
+                    file=file,
                     ephemeral=False
                 )
+
+            await logs.send_log(
+                bot, interaction.guild_id, interaction.user,
+                mode, self.file_name, result
+            )
 
         except Exception as e:
             await interaction.followup.send(f"Erro: {e}", ephemeral=True)
@@ -137,13 +136,14 @@ async def deobf(
             is_url = False
             file_name = arquivo.filename.replace(".lua", "_deobf.lua")
 
-        # Sugere o desfuscador mais util
         suggestion = detected if detected != "unknown" else "moonsecv3"
         suggestion_label = suggestion.upper()
 
         embed = discord.Embed(
             title="Selecione o desfuscador",
-            description=f"Obfuscador detectado: `{detected.upper() if detected != 'unknown' else 'Nao detectado'}`\n\n"
+            description=f"Obfuscador detectado: `{detected.upper() if detected != 'unknown' else 'Nao detectado'}`
+
+"
                         f"Desfuscador recomendado: **{suggestion_label}**",
             color=0x9B59B6,
             timestamp=discord.utils.utcnow()
@@ -156,8 +156,6 @@ async def deobf(
     except Exception as e:
         await interaction.followup.send(f"Erro: {e}", ephemeral=True)
 
-
-# ========== VERIFY COMMAND ==========
 
 @bot.tree.command(name="verify", description="Verifica qual obfuscador foi usado no codigo")
 @app_commands.describe(
@@ -204,8 +202,6 @@ async def verify_cmd(
         await interaction.followup.send(f"Erro: {e}", ephemeral=True)
 
 
-# ========== HELP COMMAND ==========
-
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
 async def help_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
@@ -216,20 +212,24 @@ async def help_cmd(interaction: discord.Interaction):
     )
 
     deobf_text = (
-        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil)\n"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil)
+"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
 
     util_text = (
-        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
+        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado
+"
         "`/help` — Mostra esta mensagem"
     )
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
 
     admin_text = (
-        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*\n"
-        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*\n"
+        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*
+"
+        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*
+"
         "`/bot <true|false>` — Ativa/desativa o bot *(requer Gerenciar Servidor)*"
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
@@ -237,8 +237,6 @@ async def help_cmd(interaction: discord.Interaction):
     embed.set_footer(text=f"Solicitado por {interaction.user}")
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
-
-# ========== ADMIN COMMANDS ==========
 
 @bot.tree.command(name="logs", description="Define o canal de logs")
 @app_commands.describe(canal="Canal onde os logs serao enviados")
@@ -263,7 +261,8 @@ async def servidores_cmd(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="Rank de Servidores",
-        description="\n".join(lines) if lines else "Bot nao esta em nenhum servidor.",
+        description="
+".join(lines) if lines else "Bot nao esta em nenhum servidor.",
         color=0xF39C12,
         timestamp=discord.utils.utcnow()
     )
@@ -285,8 +284,6 @@ async def bot_cmd(interaction: discord.Interaction, ativo: bool):
         ephemeral=True
     )
 
-
-# ========== CHECKS ==========
 
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -312,8 +309,6 @@ for cmd_name in ("deobf", "verify", "help"):
         cmd.add_check(bot_enabled_check)
 
 
-# ========== EVENTS ==========
-
 @bot.event
 async def on_ready():
     await bot.tree.sync()
@@ -337,8 +332,6 @@ async def on_guild_remove(guild: discord.Guild):
     BOT_ENABLED.pop(guild.id, None)
     logs.LOG_CHANNELS.pop(guild.id, None)
 
-
-# ========== RUN ==========
 
 if __name__ == "__main__":
     if not TOKEN:
