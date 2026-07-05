@@ -121,6 +121,31 @@ async def deobf_moonsecv2(
         await interaction.followup.send(f"Erro: {e}", ephemeral=True)
 
 
+@bot.tree.command(name="deobf_wearedevs", description="Deobfusca codigo Lua usando WeAreDevs")
+@app_commands.describe(
+    url="URL do codigo ofuscado",
+    arquivo="Arquivo .lua ofuscado"
+)
+async def deobf_wearedevs(
+    interaction: discord.Interaction,
+    url: str = None,
+    arquivo: discord.Attachment = None
+):
+    await interaction.response.defer(ephemeral=True)
+    code_or_url, file_name = await _get_code(interaction, url, arquivo)
+    if code_or_url is None:
+        return
+
+    try:
+        if url:
+            result = v1.deobfuscate_from_url(code_or_url, mode="wearedevs")
+        else:
+            result = v1.deobfuscate(code_or_url, mode="wearedevs")
+        await _send_result(interaction, result, file_name, "WeAreDevs", "wearedevs")
+    except Exception as e:
+        await interaction.followup.send(f"Erro: {e}", ephemeral=True)
+
+
 @bot.tree.command(name="verify", description="Verifica qual obfuscador foi usado no codigo")
 @app_commands.describe(
     url="URL do codigo",
@@ -178,6 +203,7 @@ async def help_cmd(interaction: discord.Interaction):
     deobf_text = (
         "`/deobf_moonsecv3 <url|arquivo>` — Deobfusca com Moonsec V3\n"
         "`/deobf_moonsecv2 <url|arquivo>` — Deobfusca com Moonsec V2\n"
+        "`/deobf_wearedevs <url|arquivo>` — Deobfusca com WeAreDevs\n"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
@@ -267,7 +293,7 @@ async def bot_enabled_check(interaction: discord.Interaction) -> bool:
     return BOT_ENABLED.get(interaction.guild_id, True)
 
 
-for cmd_name in ("deobf_moonsecv3", "deobf_moonsecv2", "verify", "help"):
+for cmd_name in ("deobf_moonsecv3", "deobf_moonsecv2", "deobf_wearedevs", "verify", "help"):
     cmd = bot.tree.get_command(cmd_name)
     if cmd:
         cmd.add_check(bot_enabled_check)
