@@ -10,7 +10,7 @@ def _clean_output(text: str) -> str:
     """Remove o header da API Speack e substitui por header proprio."""
     lines = text.splitlines()
     if lines and "Speack" in lines[0]:
-        lines[0] = "-- Deobf by NzAprendiz | https://discord.gg/nFHUEyG6MS"
+        lines[0] = "-- Deobf by Speack | https://discord.gg/SxfqCrd952"
     return "\n".join(lines)
 
 
