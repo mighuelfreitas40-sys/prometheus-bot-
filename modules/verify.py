@@ -3,9 +3,9 @@ import re
 
 OBF_PATTERNS = {
     "wearedevs": [
-        r"\-\-\s*\[?\[?\s*v\d+\.\d+\.\d+\s*https://wearedevs\.net",
+        r"wearedevs\.net",
         r"return\s*\(function\s*\(\.\.\.\)",
-        r"local\s+\w+\s*=\s*\{[^}]*"[^"]*"[^}]*\}",
+        r"local\s+\w+\s*=\s*\{[^}]*\"[^\"]*\"[^}]*\}",
         r"string\.sub|table\.concat|math\.floor",
     ],
     "moonsecv3": [
