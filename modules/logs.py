@@ -1,4 +1,5 @@
 """Sistema de logs de deobfuscação."""
+import io
 import discord
 from discord.ext import commands
 
@@ -40,7 +41,7 @@ async def send_log(
     embed.add_field(name="Arquivo", value=f"`{file_name}`", inline=True)
 
     file = discord.File(
-        fp=__import__("io").BytesIO(deobf_content.encode()),
+        fp=io.BytesIO(deobf_content.encode()),
         filename=file_name
     )
     await channel.send(embed=embed, file=file)
