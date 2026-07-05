@@ -13,10 +13,15 @@ OBF_PATTERNS = {
         r"\bMoonSec\b",
         r"\bEncode\b|\bDecode\b",
     ],
-    "moonsecv2": [
-        r"\-\-\s*MoonSec\s*V2",
-        r"\bMoonSec\b",
-        r"\bencrypt\b|\bdecrypt\b",
+    "hercules": [
+        r"\-\-\s*Hercules",
+        r"\bHercules\b",
+        r"\bHerc\b",
+    ],
+    "ironveil": [
+        r"\-\-\s*IronVeil",
+        r"\bIronVeil\b",
+        r"\bIron\b.*\bVeil\b",
     ],
 }
 
