@@ -1,4 +1,4 @@
-"""Moonsec Deobfuscator Bot - Discord."""
+"""Moonsec Deobfuscator Bot - Discord (API Speack)."""
 import os
 import io
 import aiohttp
@@ -19,7 +19,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # ========== HELPERS ==========
 
 async def fetch_url(url: str) -> str:
-    """Baixa conteudo de uma URL (pastebin, pastefy, etc)."""
+    """Baixa conteudo de uma URL."""
     async with aiohttp.ClientSession() as session:
         async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
             if resp.status != 200:
@@ -28,7 +28,6 @@ async def fetch_url(url: str) -> str:
 
 
 def has_manage_guild(interaction: discord.Interaction) -> bool:
-    """Checa se o usuario tem permissao de Gerenciar Servidor."""
     return (
         interaction.user.guild_permissions.manage_guild
         or interaction.user.guild_permissions.administrator
@@ -36,7 +35,6 @@ def has_manage_guild(interaction: discord.Interaction) -> bool:
 
 
 async def _get_code(interaction, url, arquivo):
-    """Obtem o codigo de URL ou arquivo."""
     if not url and not arquivo:
         await interaction.followup.send("Envie uma URL ou um arquivo.", ephemeral=True)
         return None, None
@@ -45,17 +43,17 @@ async def _get_code(interaction, url, arquivo):
         return None, None
 
     if url:
-        code = await fetch_url(url)
-        file_name = "deobfuscated.lua"
+        return url, "deobfuscated.lua"
     else:
         code = (await arquivo.read()).decode("utf-8", errors="replace")
-        file_name = arquivo.filename.replace(".lua", "_deobf.lua")
-
-    return code, file_name
+        return code, arquivo.filename.replace(".lua", "_deobf.lua")
 
 
 async def _send_result(interaction, result, file_name, label, deobf_type):
-    """Envia o resultado da deobfuscacao."""
+    if result.startswith("Erro"):
+        await interaction.followup.send(f"Deobfuscacao **{label}** falhou: {result}", ephemeral=True)
+        return
+
     buffer = io.BytesIO(result.encode())
     file = discord.File(fp=buffer, filename=file_name)
 
@@ -84,12 +82,15 @@ async def deobf_moonsecv3(
     arquivo: discord.Attachment = None
 ):
     await interaction.response.defer(ephemeral=True)
-    code, file_name = await _get_code(interaction, url, arquivo)
-    if code is None:
+    code_or_url, file_name = await _get_code(interaction, url, arquivo)
+    if code_or_url is None:
         return
 
     try:
-        result = v1.deobfuscate(code, mode="moonsecv3")
+        if url:
+            result = v1.deobfuscate_from_url(code_or_url, mode="moonsecv3")
+        else:
+            result = v1.deobfuscate(code_or_url, mode="moonsecv3")
         await _send_result(interaction, result, file_name, "Moonsec V3", "moonsecv3")
     except Exception as e:
         await interaction.followup.send(f"Erro: {e}", ephemeral=True)
@@ -106,12 +107,15 @@ async def deobf_moonsecv2(
     arquivo: discord.Attachment = None
 ):
     await interaction.response.defer(ephemeral=True)
-    code, file_name = await _get_code(interaction, url, arquivo)
-    if code is None:
+    code_or_url, file_name = await _get_code(interaction, url, arquivo)
+    if code_or_url is None:
         return
 
     try:
-        result = v1.deobfuscate(code, mode="moonsecv2")
+        if url:
+            result = v1.deobfuscate_from_url(code_or_url, mode="moonsecv2")
+        else:
+            result = v1.deobfuscate(code_or_url, mode="moonsecv2")
         await _send_result(interaction, result, file_name, "Moonsec V2", "moonsecv2")
     except Exception as e:
         await interaction.followup.send(f"Erro: {e}", ephemeral=True)
@@ -128,11 +132,20 @@ async def verify_cmd(
     arquivo: discord.Attachment = None
 ):
     await interaction.response.defer(ephemeral=True)
-    code, _ = await _get_code(interaction, url, arquivo)
-    if code is None:
+
+    if not url and not arquivo:
+        await interaction.followup.send("Envie uma URL ou um arquivo.", ephemeral=True)
+        return
+    if url and arquivo:
+        await interaction.followup.send("Escolha apenas uma opcao: URL ou arquivo.", ephemeral=True)
         return
 
     try:
+        if url:
+            code = await fetch_url(url)
+        else:
+            code = (await arquivo.read()).decode("utf-8", errors="replace")
+
         detected = verify.detect_obfuscator(code)
 
         embed = discord.Embed(
@@ -157,7 +170,7 @@ async def verify_cmd(
 async def help_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
         title="Moonsec Deobfuscator Bot",
-        description="Bot de deobfuscacao de scripts Lua.",
+        description="Bot de deobfuscacao de scripts Lua via API Speack.",
         color=0x9B59B6,
         timestamp=discord.utils.utcnow()
     )
@@ -176,9 +189,9 @@ async def help_cmd(interaction: discord.Interaction):
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
 
     admin_text = (
-        "`/logs <canal>` — Define canal de logs de deobfuscacao *(requer Gerenciar Servidor)*\n"
+        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*\n"
         "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*\n"
-        "`/bot <true|false>` — Ativa/desativa o bot no servidor *(requer Gerenciar Servidor)*"
+        "`/bot <true|false>` — Ativa/desativa o bot *(requer Gerenciar Servidor)*"
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
 
@@ -188,7 +201,7 @@ async def help_cmd(interaction: discord.Interaction):
 
 # ========== ADMIN COMMANDS ==========
 
-@bot.tree.command(name="logs", description="Define o canal de logs de deobfuscacao")
+@bot.tree.command(name="logs", description="Define o canal de logs")
 @app_commands.describe(canal="Canal onde os logs serao enviados")
 @app_commands.check(has_manage_guild)
 async def logs_cmd(interaction: discord.Interaction, canal: discord.TextChannel):
@@ -240,7 +253,7 @@ async def bot_cmd(interaction: discord.Interaction, ativo: bool):
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CheckFailure):
         await interaction.response.send_message(
-            "Voce precisa ter permissao de Gerenciar Servidor ou Administrador para usar este comando.",
+            "Voce precisa ter permissao de Gerenciar Servidor ou Administrador.",
             ephemeral=True
         )
     else:
