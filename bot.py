@@ -13,6 +13,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
@@ -261,12 +262,37 @@ async def logs_cmd(interaction: discord.Interaction, canal: discord.TextChannel)
 @bot.tree.command(name="servidores", description="Mostra rank de servidores por membros")
 @app_commands.check(has_manage_guild)
 async def servidores_cmd(interaction: discord.Interaction):
-    guilds = sorted(bot.guilds, key=lambda g: g.member_count or 0, reverse=True)
+    await interaction.response.defer(ephemeral=False)
+
+    # Atualizar contagem de membros de cada guild
+    guilds_data = []
+    for guild in bot.guilds:
+        try:
+            await guild.chunk()
+            count = guild.member_count or len(guild.members)
+        except Exception:
+            count = guild.member_count or 0
+
+        # Tentar gerar link de convite
+        invite_link = "N/A"
+        try:
+            # Procurar canal de texto onde o bot pode criar convite
+            for channel in guild.text_channels:
+                if channel.permissions_for(guild.me).create_instant_invite:
+                    invite = await channel.create_invite(max_age=0, max_uses=0, unique=False)
+                    invite_link = invite.url
+                    break
+        except Exception:
+            invite_link = "N/A"
+
+        guilds_data.append((guild.name, count, invite_link))
+
+    # Ordenar por membros (decrescente)
+    guilds_data.sort(key=lambda x: x[1], reverse=True)
 
     lines = []
-    for i, guild in enumerate(guilds[:20], 1):
-        count = guild.member_count or 0
-        lines.append(f"**{i}.** {guild.name} — `{count:,}` membros")
+    for i, (name, count, link) in enumerate(guilds_data[:20], 1):
+        lines.append(f"**{i}.** {name} — `{count:,}` membros — [Convite]({link})")
 
     embed = discord.Embed(
         title="Rank de Servidores",
@@ -275,7 +301,7 @@ async def servidores_cmd(interaction: discord.Interaction):
         timestamp=discord.utils.utcnow()
     )
     embed.set_footer(text=f"Total: {len(bot.guilds)} servidores")
-    await interaction.response.send_message(embed=embed, ephemeral=False)
+    await interaction.followup.send(embed=embed, ephemeral=False)
 
 
 BOT_ENABLED = {}
