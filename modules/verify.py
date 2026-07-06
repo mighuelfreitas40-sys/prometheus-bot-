@@ -150,11 +150,14 @@ def detect_obfuscator(code: str) -> str:
     return max(scores, key=scores.get)
 
 
-# Teste com código de exemplo
-test_code = """
--- Luraph v12.4
-local LPH_JIT = true
-local LPH_ENCSTR = "hello"
-return (function(...)
-    local a = "test"
-end)
+# Teste com codigo de exemplo
+test_code = (
+    "-- Luraph v12.4\n"
+    "local LPH_JIT = true\n"
+    "local LPH_ENCSTR = \"hello\"\n"
+    "return (function(...)\n"
+    "    local a = \"test\"\n"
+    "end)\n"
+)
+
+print(detect_obfuscator(test_code))
