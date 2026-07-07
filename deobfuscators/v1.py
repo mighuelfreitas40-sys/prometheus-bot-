@@ -1,9 +1,11 @@
 """Wrapper para API Speack e 69ms de deobfuscacao."""
 import os
+import tempfile
 import requests
 
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
 API_69MS = "https://0962-186-251-218-101.ngrok-free.app/lunar/69ms/api/v1/hookop"
+TOKEN_69MS = "mxd-ens-vol-eaj-1x8-lunar-is-the-best"
 
 
 def _clean_output(text: str) -> str:
@@ -14,7 +16,6 @@ def _clean_output(text: str) -> str:
 
 
 def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
-    import tempfile
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
         tmp_path = f.name
@@ -29,8 +30,7 @@ def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
 
         if response.status_code == 200:
             return _clean_output(response.text)
-        else:
-            return f"Erro da API: HTTP {response.status_code} - {response.text}"
+        return f"Erro da API: HTTP {response.status_code} - {response.text}"
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
     finally:
@@ -48,30 +48,33 @@ def deobfuscate_from_url(url: str, mode: str = "moonsecv3") -> str:
 
         if response.status_code == 200:
             return _clean_output(response.text)
-        else:
-            return f"Erro da API: HTTP {response.status_code} - {response.text}"
+        return f"Erro da API: HTTP {response.status_code} - {response.text}"
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
 
 
 def deobfuscate_69ms(code: str) -> str:
-    try:
-        response = requests.post(
-            API_69MS,
-            json={"code": code},
-            timeout=120
-        )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
+        f.write(code)
+        tmp_path = f.name
 
-        data = response.json()
-        if response.status_code == 200 and data.get("success"):
-            return _clean_output(data["result"])
-        else:
-            error = data.get("error", "unknown error")
-            return f"Erro da API: HTTP {response.status_code} - {error}"
+    try:
+        with open(tmp_path, "rb") as f:
+            response = requests.post(
+                API_69MS,
+                headers={"Authorization": f"Bearer {TOKEN_69MS}"},
+                files={"file": ("script.lua", f, "text/plain")},
+                timeout=300
+            )
+
+        if response.status_code == 200:
+            return _clean_output(response.text)
+        return f"Erro da API: HTTP {response.status_code} - {response.text[:500]}"
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
-    except ValueError:
-        return f"Erro da API: HTTP {response.status_code} - {response.text[:200]}"
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
 
 def deobfuscate_69ms_from_url(url: str) -> str:
@@ -80,20 +83,6 @@ def deobfuscate_69ms_from_url(url: str) -> str:
         if r.status_code != 200:
             return f"Erro ao baixar URL: HTTP {r.status_code}"
         code = r.text
-
-        response = requests.post(
-            API_69MS,
-            json={"code": code},
-            timeout=120
-        )
-
-        data = response.json()
-        if response.status_code == 200 and data.get("success"):
-            return _clean_output(data["result"])
-        else:
-            error = data.get("error", "unknown error")
-            return f"Erro da API: HTTP {response.status_code} - {error}"
+        return deobfuscate_69ms(code)
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
-    except ValueError:
-        return f"Erro da API: HTTP {response.status_code} - {response.text[:200]}"
