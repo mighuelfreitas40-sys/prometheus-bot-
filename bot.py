@@ -51,7 +51,11 @@ class DeobfSelect(discord.ui.Select):
         mode = self.values[0]
         label = mode.upper()
 
-        await interaction.response.defer(ephemeral=False)
+        await interaction.response.send_message(
+            f"Deobfuscando com **{label}**...",
+            ephemeral=False
+        )
+        msg = await interaction.original_response()
 
         try:
             if self.is_url:
@@ -66,7 +70,7 @@ class DeobfSelect(discord.ui.Select):
                     result = v1.deobfuscate(self.code_or_url, mode=mode)
 
             if result.startswith("Erro"):
-                await interaction.followup.send(f"Deobfuscacao **{label}** falhou: {result}", ephemeral=True)
+                await msg.edit(content=f"Deobfuscacao **{label}** falhou: {result}")
                 return
 
             dm_sent = False
@@ -83,17 +87,15 @@ class DeobfSelect(discord.ui.Select):
                 pass
 
             if dm_sent:
-                await interaction.followup.send(
-                    f"Script desfuscado e enviado na DM de {interaction.user.mention}!",
-                    ephemeral=False
+                await msg.edit(
+                    content=f"Script desfuscado e enviado na DM de {interaction.user.mention}!"
                 )
             else:
                 buffer = io.BytesIO(result.encode())
                 file = discord.File(fp=buffer, filename=self.file_name)
-                await interaction.followup.send(
-                    f"Deobfuscacao **{label}** concluida para {interaction.user.mention}! (DM bloqueada, enviado aqui)",
-                    file=file,
-                    ephemeral=False
+                await msg.edit(
+                    content=f"Deobfuscacao **{label}** concluida para {interaction.user.mention}! (DM bloqueada, enviado aqui)",
+                    attachments=[file]
                 )
 
             await logs.send_log(
@@ -102,7 +104,7 @@ class DeobfSelect(discord.ui.Select):
             )
 
         except Exception as e:
-            await interaction.followup.send(f"Erro: {e}", ephemeral=True)
+            await msg.edit(content=f"Erro: {e}")
 
 
 class DeobfView(discord.ui.View):
@@ -121,13 +123,14 @@ async def deobf(
     url: str = None,
     arquivo: discord.Attachment = None
 ):
-    await interaction.response.defer(ephemeral=False)
+    await interaction.response.send_message("Processando...", ephemeral=False)
+    msg = await interaction.original_response()
 
     if not url and not arquivo:
-        await interaction.followup.send("Envie uma URL ou um arquivo.", ephemeral=True)
+        await msg.edit(content="Envie uma URL ou um arquivo.")
         return
     if url and arquivo:
-        await interaction.followup.send("Escolha apenas uma opcao: URL ou arquivo.", ephemeral=True)
+        await msg.edit(content="Escolha apenas uma opcao: URL ou arquivo.")
         return
 
     try:
@@ -157,10 +160,10 @@ async def deobf(
         embed.set_footer(text=f"Solicitado por {interaction.user}")
 
         view = DeobfView(code_or_url, is_url, file_name)
-        await interaction.followup.send(embed=embed, view=view, ephemeral=False)
+        await msg.edit(content="", embed=embed, view=view)
 
     except Exception as e:
-        await interaction.followup.send(f"Erro: {e}", ephemeral=True)
+        await msg.edit(content=f"Erro: {e}")
 
 
 @bot.tree.command(name="verify", description="Verifica qual obfuscador foi usado no codigo")
@@ -173,13 +176,14 @@ async def verify_cmd(
     url: str = None,
     arquivo: discord.Attachment = None
 ):
-    await interaction.response.defer(ephemeral=True)
+    await interaction.response.send_message("Verificando...", ephemeral=True)
+    msg = await interaction.original_response()
 
     if not url and not arquivo:
-        await interaction.followup.send("Envie uma URL ou um arquivo.", ephemeral=True)
+        await msg.edit(content="Envie uma URL ou um arquivo.")
         return
     if url and arquivo:
-        await interaction.followup.send("Escolha apenas uma opcao: URL ou arquivo.", ephemeral=True)
+        await msg.edit(content="Escolha apenas uma opcao: URL ou arquivo.")
         return
 
     try:
@@ -202,10 +206,10 @@ async def verify_cmd(
         )
         embed.set_footer(text=f"Solicitado por {interaction.user}")
 
-        await interaction.followup.send(embed=embed, ephemeral=False)
+        await msg.edit(content="", embed=embed)
 
     except Exception as e:
-        await interaction.followup.send(f"Erro: {e}", ephemeral=True)
+        await msg.edit(content=f"Erro: {e}")
 
 
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
@@ -254,7 +258,8 @@ async def logs_cmd(interaction: discord.Interaction, canal: discord.TextChannel)
 @bot.tree.command(name="servidores", description="Mostra rank de servidores por membros")
 @app_commands.check(has_manage_guild)
 async def servidores_cmd(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=False)
+    await interaction.response.send_message("Carregando...", ephemeral=False)
+    msg = await interaction.original_response()
 
     guilds_data = []
     for guild in bot.guilds:
@@ -289,7 +294,7 @@ async def servidores_cmd(interaction: discord.Interaction):
         timestamp=discord.utils.utcnow()
     )
     embed.set_footer(text=f"Total: {len(bot.guilds)} servidores")
-    await interaction.followup.send(embed=embed, ephemeral=False)
+    await msg.edit(content="", embed=embed)
 
 
 BOT_ENABLED = {}
@@ -310,10 +315,16 @@ async def bot_cmd(interaction: discord.Interaction, ativo: bool):
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CheckFailure):
-        await interaction.response.send_message(
-            "Voce precisa ter permissao de Gerenciar Servidor ou Administrador.",
-            ephemeral=True
-        )
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                "Voce precisa ter permissao de Gerenciar Servidor ou Administrador.",
+                ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                "Voce precisa ter permissao de Gerenciar Servidor ou Administrador.",
+                ephemeral=True
+            )
     else:
         if not interaction.response.is_done():
             await interaction.response.send_message(f"Erro: {error}", ephemeral=True)
