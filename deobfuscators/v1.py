@@ -5,7 +5,7 @@ import requests
 
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
 API_69MS = "https://3fa4-186-251-218-101.ngrok-free.app/lunar/69ms/api/v1/hookop"
-TOKEN_69MS = "mxd-ens-vol-eaj-1x8-lunar-is-the-best"
+TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
 
 
 def _clean_output(text: str) -> str:
