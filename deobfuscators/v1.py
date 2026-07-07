@@ -4,7 +4,7 @@ import tempfile
 import requests
 
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
-API_69MS = "https://0962-186-251-218-101.ngrok-free.app/lunar/69ms/api/v1/hookop"
+API_69MS = "https://1ad8-186-251-218-101.ngrok-free.app/"
 TOKEN_69MS = "mxd-ens-vol-eaj-1x8-lunar-is-the-best"
 
 
