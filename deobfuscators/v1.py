@@ -3,7 +3,7 @@ import os
 import requests
 import tempfile
 
-API_URL = "https://proving-staining-monitor.ngrok-free.dev/speack/api/v1/deobf"
+API_URL = "https://api-speack.onrender.com"
 
 
 def _clean_output(text: str) -> str:
