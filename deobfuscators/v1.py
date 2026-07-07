@@ -3,7 +3,7 @@ import os
 import requests
 import tempfile
 
-API_URL = "https://api-speack.onrender.com"
+API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
 
 
 def _clean_output(text: str) -> str:
