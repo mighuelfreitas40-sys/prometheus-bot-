@@ -11,6 +11,8 @@ from modules import verify, logs
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
+SUPPORTED_METHODS = {"moonsecv3", "wearedevs", "hercules", "ironveil", "69ms"}
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -39,13 +41,13 @@ class DeobfSelect(discord.ui.Select):
         self.file_name = file_name
 
         options = [
-            discord.SelectOption(label="Moonsec V3", value="moonsecv3", description="Para scripts ofuscados com Moonsec V3"),
-            discord.SelectOption(label="WeAreDevs", value="wearedevs", description="Para scripts ofuscados com WeAreDevs"),
-            discord.SelectOption(label="Hercules", value="hercules", description="Para scripts ofuscados com Hercules"),
-            discord.SelectOption(label="IronVeil", value="ironveil", description="Para scripts ofuscados com IronVeil"),
-            discord.SelectOption(label="69ms", value="69ms", description="Para scripts ofuscados com 69ms"),
+            discord.SelectOption(label="Moonsec V3", value="moonsecv3", description="Scripts ofuscados com Moonsec V3", emoji="🌙"),
+            discord.SelectOption(label="WeAreDevs", value="wearedevs", description="Scripts ofuscados com WeAreDevs", emoji="⚡"),
+            discord.SelectOption(label="Hercules", value="hercules", description="Scripts ofuscados com Hercules", emoji="🏛️"),
+            discord.SelectOption(label="IronVeil", value="ironveil", description="Scripts ofuscados com IronVeil", emoji="🛡️"),
+            discord.SelectOption(label="69ms", value="69ms", description="Scripts ofuscados com 69ms", emoji="⏱️"),
         ]
-        super().__init__(placeholder="Selecione o desfuscador", options=options)
+        super().__init__(placeholder="Selecione um metodo", options=options)
 
     async def callback(self, interaction: discord.Interaction):
         mode = self.values[0]
@@ -150,11 +152,23 @@ async def deobf(
         suggestion = detected if detected != "unknown" else "moonsecv3"
         suggestion_label = suggestion.upper()
 
+        if detected == "unknown":
+            rec_text = "Nao detectamos o obfuscador. Nao temos um metodo para recomendar, se quiser tentar o 69ms ou outros fica da sua escolha"
+            rec_color = 0xF59E0B
+        elif detected not in SUPPORTED_METHODS:
+            rec_text = f"Detectamos que o script usa **{suggestion_label}**, mas nao temos um metodo para esse obfuscador. Se quiser tentar o 69ms ou outros fica da sua escolha"
+            rec_color = 0xEF4444
+        else:
+            rec_text = f"**{suggestion_label}**"
+            rec_color = 0x7C3AED
+
         embed = discord.Embed(
-            title="Selecione o desfuscador",
-            description=f"Obfuscador detectado: `{detected.upper() if detected != 'unknown' else 'Nao detectado'}`\n\n"
-                        f"Desfuscador recomendado: **{suggestion_label}**",
-            color=0x9B59B6,
+            title="Selecione um metodo",
+            description=(
+                f"**Obfuscador detectado:** `{detected.upper() if detected != 'unknown' else 'Nao detectado'}`\n\n"
+                f"**Metodo recomendado:** {rec_text}"
+            ),
+            color=rec_color,
             timestamp=discord.utils.utcnow()
         )
         embed.set_footer(text=f"Solicitado por {interaction.user}")
@@ -217,7 +231,7 @@ async def help_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
         title="Deobfuscator Bot",
         description="Bot de deobfuscacao de scripts Lua via API Speack.",
-        color=0x9B59B6,
+        color=0x7C3AED,
         timestamp=discord.utils.utcnow()
     )
 
