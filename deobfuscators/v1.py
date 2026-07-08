@@ -24,8 +24,7 @@ def _clean_output(text: str) -> str:
     lines = text.splitlines()
     if lines and "Speack" in lines[0]:
         lines[0] = "-- Deobf by Speack | https://discord.gg/SxfqCrd952"
-    return "
-".join(lines)
+    return chr(10).join(lines)
 
 
 def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
