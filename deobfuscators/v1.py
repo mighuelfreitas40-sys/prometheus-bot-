@@ -3,16 +3,29 @@ import os
 import tempfile
 import requests
 
+PASTEFY_URL = "https://pastefy.app/X7MUydRh/raw"
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
-API_69MS = "https://3fa4-186-251-218-101.ngrok-free.app/lunar/69ms/api/v1/hookop"
 TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
+
+
+def _get_69ms_endpoint() -> str:
+    try:
+        r = requests.get(PASTEFY_URL, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code == 200:
+            endpoint = r.text.strip()
+            if endpoint.startswith("http"):
+                return endpoint
+    except Exception:
+        pass
+    return None
 
 
 def _clean_output(text: str) -> str:
     lines = text.splitlines()
     if lines and "Speack" in lines[0]:
         lines[0] = "-- Deobf by Speack | https://discord.gg/SxfqCrd952"
-    return "\n".join(lines)
+    return "
+".join(lines)
 
 
 def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
@@ -54,6 +67,10 @@ def deobfuscate_from_url(url: str, mode: str = "moonsecv3") -> str:
 
 
 def deobfuscate_69ms(code: str) -> str:
+    endpoint = _get_69ms_endpoint()
+    if not endpoint:
+        return "Erro: nao foi possivel obter o endpoint atual da API 69ms."
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
         tmp_path = f.name
@@ -61,7 +78,7 @@ def deobfuscate_69ms(code: str) -> str:
     try:
         with open(tmp_path, "rb") as f:
             response = requests.post(
-                API_69MS,
+                endpoint,
                 headers={"Authorization": f"Bearer {TOKEN_69MS}"},
                 files={"file": ("script.lua", f, "text/plain")},
                 timeout=300
