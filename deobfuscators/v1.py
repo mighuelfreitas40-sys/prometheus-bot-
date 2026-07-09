@@ -5,7 +5,7 @@ import requests
 
 PASTEFY_URL = "https://pastefy.app/X7MUydRh/raw"
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
-REVEA_URL = "https://web-production-eb197.up.railway.app/"
+REVEA_URL = "https://web-production-eb197.up.railway.app/api/deobf"
 TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
 
 
