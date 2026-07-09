@@ -119,7 +119,10 @@ def deobfuscate_revea(code: str) -> str:
             )
 
         if response.status_code == 200:
-            return response.text
+            data = response.json()
+            if data.get("success"):
+                return data["code"]
+            return f"Erro da API: {data.get('error', 'unknown')}"
         return f"Erro da API: HTTP {response.status_code} - {response.text}"
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
