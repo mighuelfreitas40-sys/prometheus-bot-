@@ -1,4 +1,3 @@
-"""Deobfuscator Bot - Discord (API Speack)."""
 import os
 import io
 import aiohttp
@@ -17,6 +16,17 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+OWNER_ID = 1252758938693144696
+
+
+def make_error_embed(title: str, description: str) -> discord.Embed:
+    return discord.Embed(
+        title=title,
+        description=description,
+        color=0xE74C3C,
+        timestamp=discord.utils.utcnow()
+    )
 
 
 async def fetch_url(url: str) -> str:
@@ -72,7 +82,11 @@ class DeobfSelect(discord.ui.Select):
                     result = v1.deobfuscate(self.code_or_url, mode=mode)
 
             if result.startswith("Erro"):
-                await msg.edit(content=f"Deobfuscacao **{label}** falhou: {result}")
+                embed = make_error_embed(
+                    "Falha na Deobfuscacao",
+                    f"Deobfuscacao **{label}** falhou: {result}"
+                )
+                await msg.edit(content="", embed=embed)
                 return
 
             dm_sent = False
@@ -106,7 +120,8 @@ class DeobfSelect(discord.ui.Select):
             )
 
         except Exception as e:
-            await msg.edit(content=f"Erro: {e}")
+            embed = make_error_embed("Erro Inesperado", str(e))
+            await msg.edit(content="", embed=embed)
 
 
 class DeobfView(discord.ui.View):
@@ -129,10 +144,18 @@ async def deobf(
     msg = await interaction.original_response()
 
     if not url and not arquivo:
-        await msg.edit(content="Envie uma URL ou um arquivo.")
+        embed = make_error_embed(
+            "Argumentos Invalidos",
+            "Envie uma URL ou um arquivo."
+        )
+        await msg.edit(content="", embed=embed)
         return
     if url and arquivo:
-        await msg.edit(content="Escolha apenas uma opcao: URL ou arquivo.")
+        embed = make_error_embed(
+            "Argumentos Invalidos",
+            "Escolha apenas uma opcao: URL ou arquivo."
+        )
+        await msg.edit(content="", embed=embed)
         return
 
     try:
@@ -165,7 +188,9 @@ async def deobf(
         embed = discord.Embed(
             title="Selecione um metodo",
             description=(
-                f"**Obfuscador detectado:** `{detected.upper() if detected != 'unknown' else 'Nao detectado'}`\n\n"
+                f"**Obfuscador detectado:** `{detected.upper() if detected != 'unknown' else 'Nao detectado'}`
+
+"
                 f"**Metodo recomendado:** {rec_text}"
             ),
             color=rec_color,
@@ -177,7 +202,8 @@ async def deobf(
         await msg.edit(content="", embed=embed, view=view)
 
     except Exception as e:
-        await msg.edit(content=f"Erro: {e}")
+        embed = make_error_embed("Erro", str(e))
+        await msg.edit(content="", embed=embed)
 
 
 @bot.tree.command(name="verify", description="Verifica qual obfuscador foi usado no codigo")
@@ -194,10 +220,18 @@ async def verify_cmd(
     msg = await interaction.original_response()
 
     if not url and not arquivo:
-        await msg.edit(content="Envie uma URL ou um arquivo.")
+        embed = make_error_embed(
+            "Argumentos Invalidos",
+            "Envie uma URL ou um arquivo."
+        )
+        await msg.edit(content="", embed=embed)
         return
     if url and arquivo:
-        await msg.edit(content="Escolha apenas uma opcao: URL ou arquivo.")
+        embed = make_error_embed(
+            "Argumentos Invalidos",
+            "Escolha apenas uma opcao: URL ou arquivo."
+        )
+        await msg.edit(content="", embed=embed)
         return
 
     try:
@@ -223,7 +257,8 @@ async def verify_cmd(
         await msg.edit(content="", embed=embed)
 
     except Exception as e:
-        await msg.edit(content=f"Erro: {e}")
+        error_embed = make_error_embed("Erro na Verificacao", str(e))
+        await msg.edit(content="", embed=error_embed)
 
 
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
@@ -236,20 +271,24 @@ async def help_cmd(interaction: discord.Interaction):
     )
 
     deobf_text = (
-        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, 69ms)\n"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, 69ms)
+"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
 
     util_text = (
-        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
+        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado
+"
         "`/help` — Mostra esta mensagem"
     )
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
 
     admin_text = (
-        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*\n"
-        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*\n"
+        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*
+"
+        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*
+"
         "`/bot <true|false>` — Ativa/desativa o bot *(requer Gerenciar Servidor)*"
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
@@ -303,7 +342,8 @@ async def servidores_cmd(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="Rank de Servidores",
-        description="\n".join(lines) if lines else "Bot nao esta em nenhum servidor.",
+        description="
+".join(lines) if lines else "Bot nao esta em nenhum servidor.",
         color=0xF39C12,
         timestamp=discord.utils.utcnow()
     )
@@ -378,6 +418,35 @@ async def on_guild_join(guild: discord.Guild):
 async def on_guild_remove(guild: discord.Guild):
     BOT_ENABLED.pop(guild.id, None)
     logs.LOG_CHANNELS.pop(guild.id, None)
+
+
+# ============================================================
+# COMANDO PREFIXADO .hi — APENAS ADMIN / GERENCIAR SERVIDOR
+# ============================================================
+@bot.command(name="hi")
+async def hi_cmd(ctx: commands.Context):
+    if not (ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_guild):
+        return
+
+    total_members = sum(g.member_count or 0 for g in bot.guilds)
+    total_guilds = len(bot.guilds)
+
+    embed = discord.Embed(
+        title="NvDeobf2",
+        description=(
+            f"**Nome:** NvDeobf2
+"
+            f"**Total de Membros:** `{total_members:,}`
+"
+            f"**Total de Servidores:** `{total_guilds:,}`
+"
+            f"**Dono:** <@{OWNER_ID}>"
+        ),
+        color=0x7C3AED,
+        timestamp=discord.utils.utcnow()
+    )
+    embed.set_footer(text=f"Solicitado por {ctx.author}")
+    await ctx.send(embed=embed)
 
 
 if __name__ == "__main__":
