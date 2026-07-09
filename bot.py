@@ -277,6 +277,7 @@ async def help_cmd(interaction: discord.Interaction):
 
     util_text = (
         "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
+        "`/perfil` — Mostra informacoes do bot\n"
         "`/help` — Mostra esta mensagem"
     )
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
@@ -288,6 +289,26 @@ async def help_cmd(interaction: discord.Interaction):
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
 
+    embed.set_footer(text=f"Solicitado por {interaction.user}")
+    await interaction.response.send_message(embed=embed, ephemeral=False)
+
+
+@bot.tree.command(name="perfil", description="Mostra informacoes do bot NvDeobf2")
+async def perfil_cmd(interaction: discord.Interaction):
+    total_members = sum(g.member_count or 0 for g in bot.guilds)
+    total_guilds = len(bot.guilds)
+
+    embed = discord.Embed(
+        title="NvDeobf2",
+        description=(
+            f"**Nome:** NvDeobf2\n"
+            f"**Total de Membros:** `{total_members:,}`\n"
+            f"**Total de Servidores:** `{total_guilds:,}`\n"
+            f"**Dono:** <@{OWNER_ID}>"
+        ),
+        color=0x7C3AED,
+        timestamp=discord.utils.utcnow()
+    )
     embed.set_footer(text=f"Solicitado por {interaction.user}")
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
@@ -384,7 +405,7 @@ async def bot_enabled_check(interaction: discord.Interaction) -> bool:
     return BOT_ENABLED.get(interaction.guild_id, True)
 
 
-for cmd_name in ("deobf", "verify", "help"):
+for cmd_name in ("deobf", "verify", "help", "perfil"):
     cmd = bot.tree.get_command(cmd_name)
     if cmd:
         cmd.add_check(bot_enabled_check)
@@ -412,29 +433,6 @@ async def on_guild_join(guild: discord.Guild):
 async def on_guild_remove(guild: discord.Guild):
     BOT_ENABLED.pop(guild.id, None)
     logs.LOG_CHANNELS.pop(guild.id, None)
-
-
-@bot.command(name="hi")
-async def hi_cmd(ctx: commands.Context):
-    if not (ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_guild):
-        return
-
-    total_members = sum(g.member_count or 0 for g in bot.guilds)
-    total_guilds = len(bot.guilds)
-
-    embed = discord.Embed(
-        title="NvDeobf2",
-        description=(
-            f"**Nome:** NvDeobf2\n"
-            f"**Total de Membros:** `{total_members:,}`\n"
-            f"**Total de Servidores:** `{total_guilds:,}`\n"
-            f"**Dono:** <@{OWNER_ID}>"
-        ),
-        color=0x7C3AED,
-        timestamp=discord.utils.utcnow()
-    )
-    embed.set_footer(text=f"Solicitado por {ctx.author}")
-    await ctx.send(embed=embed)
 
 
 if __name__ == "__main__":
