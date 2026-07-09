@@ -10,7 +10,7 @@ from modules import verify, logs
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-SUPPORTED_METHODS = {"moonsecv3", "wearedevs", "hercules", "ironveil", "69ms"}
+SUPPORTED_METHODS = {"moonsecv3", "wearedevs", "hercules", "ironveil", "69ms", "revea"}
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -56,6 +56,7 @@ class DeobfSelect(discord.ui.Select):
             discord.SelectOption(label="Hercules", value="hercules", description="Scripts ofuscados com Hercules", emoji="🏛️"),
             discord.SelectOption(label="IronVeil", value="ironveil", description="Scripts ofuscados com IronVeil", emoji="🛡️"),
             discord.SelectOption(label="69ms", value="69ms", description="Scripts ofuscados com 69ms", emoji="⏱️"),
+            discord.SelectOption(label="Revea", value="revea", description="Scripts ofuscados com Revea", emoji="🔍"),
         ]
         super().__init__(placeholder="Selecione um metodo", options=options)
 
@@ -73,11 +74,15 @@ class DeobfSelect(discord.ui.Select):
             if self.is_url:
                 if mode == "69ms":
                     result = v1.deobfuscate_69ms_from_url(self.code_or_url)
+                elif mode == "revea":
+                    result = v1.deobfuscate_revea_from_url(self.code_or_url)
                 else:
                     result = v1.deobfuscate_from_url(self.code_or_url, mode=mode)
             else:
                 if mode == "69ms":
                     result = v1.deobfuscate_69ms(self.code_or_url)
+                elif mode == "revea":
+                    result = v1.deobfuscate_revea(self.code_or_url)
                 else:
                     result = v1.deobfuscate(self.code_or_url, mode=mode)
 
@@ -176,10 +181,10 @@ async def deobf(
         suggestion_label = suggestion.upper()
 
         if detected == "unknown":
-            rec_text = "Nao detectamos o obfuscador. Nao temos um metodo para recomendar, se quiser tentar o 69ms ou outros fica da sua escolha"
+            rec_text = "Nao detectamos o obfuscador. Nao temos um metodo para recomendar, se quiser tentar o 69ms, Revea ou outros fica da sua escolha"
             rec_color = 0xF59E0B
         elif detected not in SUPPORTED_METHODS:
-            rec_text = f"Detectamos que o script usa **{suggestion_label}**, mas nao temos um metodo para esse obfuscador. Se quiser tentar o 69ms ou outros fica da sua escolha"
+            rec_text = f"Detectamos que o script usa **{suggestion_label}**, mas nao temos um metodo para esse obfuscador. Se quiser tentar o 69ms, Revea ou outros fica da sua escolha"
             rec_color = 0xEF4444
         else:
             rec_text = f"**{suggestion_label}**"
@@ -189,7 +194,9 @@ async def deobf(
         embed = discord.Embed(
             title="Selecione um metodo",
             description=(
-                f"**Obfuscador detectado:** `{detected_display}`\n\n"
+                f"**Obfuscador detectado:** `{detected_display}`
+
+"
                 f"**Metodo recomendado:** {rec_text}"
             ),
             color=rec_color,
@@ -270,21 +277,26 @@ async def help_cmd(interaction: discord.Interaction):
     )
 
     deobf_text = (
-        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, 69ms)\n"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, 69ms, Revea)
+"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
 
     util_text = (
-        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
-        "`/perfil` — Mostra informacoes do bot\n"
+        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado
+"
+        "`/perfil` — Mostra informacoes do bot
+"
         "`/help` — Mostra esta mensagem"
     )
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
 
     admin_text = (
-        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*\n"
-        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*\n"
+        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*
+"
+        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*
+"
         "`/bot <true|false>` — Ativa/desativa o bot *(requer Gerenciar Servidor)*"
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
@@ -301,9 +313,12 @@ async def perfil_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
         title="NvDeobf2",
         description=(
-            f"**Nome:** NvDeobf2\n"
-            f"**Total de Membros:** `{total_members:,}`\n"
-            f"**Total de Servidores:** `{total_guilds:,}`\n"
+            f"**Nome:** NvDeobf2
+"
+            f"**Total de Membros:** `{total_members:,}`
+"
+            f"**Total de Servidores:** `{total_guilds:,}`
+"
             f"**Dono:** <@{OWNER_ID}>"
         ),
         color=0x7C3AED,
@@ -358,7 +373,8 @@ async def servidores_cmd(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="Rank de Servidores",
-        description="\n".join(lines) if lines else "Bot nao esta em nenhum servidor.",
+        description="
+".join(lines) if lines else "Bot nao esta em nenhum servidor.",
         color=0xF39C12,
         timestamp=discord.utils.utcnow()
     )
