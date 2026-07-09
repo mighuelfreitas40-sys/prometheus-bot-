@@ -194,9 +194,7 @@ async def deobf(
         embed = discord.Embed(
             title="Selecione um metodo",
             description=(
-                f"**Obfuscador detectado:** `{detected_display}`
-
-"
+                f"**Obfuscador detectado:** `{detected_display}`\n\n"
                 f"**Metodo recomendado:** {rec_text}"
             ),
             color=rec_color,
@@ -277,26 +275,21 @@ async def help_cmd(interaction: discord.Interaction):
     )
 
     deobf_text = (
-        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, 69ms, Revea)
-"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, 69ms, Revea)\n"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
 
     util_text = (
-        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado
-"
-        "`/perfil` — Mostra informacoes do bot
-"
+        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
+        "`/perfil` — Mostra informacoes do bot\n"
         "`/help` — Mostra esta mensagem"
     )
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
 
     admin_text = (
-        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*
-"
-        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*
-"
+        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*\n"
+        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*\n"
         "`/bot <true|false>` — Ativa/desativa o bot *(requer Gerenciar Servidor)*"
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
@@ -313,12 +306,9 @@ async def perfil_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
         title="NvDeobf2",
         description=(
-            f"**Nome:** NvDeobf2
-"
-            f"**Total de Membros:** `{total_members:,}`
-"
-            f"**Total de Servidores:** `{total_guilds:,}`
-"
+            f"**Nome:** NvDeobf2\n"
+            f"**Total de Membros:** `{total_members:,}`\n"
+            f"**Total de Servidores:** `{total_guilds:,}`\n"
             f"**Dono:** <@{OWNER_ID}>"
         ),
         color=0x7C3AED,
@@ -373,8 +363,7 @@ async def servidores_cmd(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="Rank de Servidores",
-        description="
-".join(lines) if lines else "Bot nao esta em nenhum servidor.",
+        description="\n".join(lines) if lines else "Bot nao esta em nenhum servidor.",
         color=0xF39C12,
         timestamp=discord.utils.utcnow()
     )
