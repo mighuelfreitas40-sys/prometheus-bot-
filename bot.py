@@ -56,7 +56,7 @@ class DeobfSelect(discord.ui.Select):
             discord.SelectOption(label="Hercules", value="hercules", description="Scripts ofuscados com Hercules", emoji="🏛️"),
             discord.SelectOption(label="IronVeil", value="ironveil", description="Scripts ofuscados com IronVeil", emoji="🛡️"),
             discord.SelectOption(label="69ms", value="69ms", description="Scripts ofuscados com 69ms", emoji="⏱️"),
-            discord.SelectOption(label="Revea", value="revea", description="Scripts ofuscados com Revea (dump)", emoji="🔍"),
+            discord.SelectOption(label="Revea", value="revea", description="Scripts ofuscados com Revea", emoji="🔍"),
         ]
         super().__init__(placeholder="Selecione um metodo", options=options)
 
@@ -75,14 +75,14 @@ class DeobfSelect(discord.ui.Select):
                 if mode == "69ms":
                     result = v1.deobfuscate_69ms_from_url(self.code_or_url)
                 elif mode == "revea":
-                    result = v1.deobfuscate_revea_dump_from_url(self.code_or_url)
+                    result = v1.deobfuscate_revea_from_url(self.code_or_url)
                 else:
                     result = v1.deobfuscate_from_url(self.code_or_url, mode=mode)
             else:
                 if mode == "69ms":
                     result = v1.deobfuscate_69ms(self.code_or_url)
                 elif mode == "revea":
-                    result = v1.deobfuscate_revea_dump(self.code_or_url)
+                    result = v1.deobfuscate_revea(self.code_or_url)
                 else:
                     result = v1.deobfuscate(self.code_or_url, mode=mode)
 
