@@ -10,7 +10,7 @@ from modules import verify, logs
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-SUPPORTED_METHODS = {"moonsecv3", "wearedevs", "hercules", "ironveil", "69ms", "revea"}
+SUPPORTED_METHODS = {"moonsecv3", "wearedevs", "hercules", "ironveil", "ironbrew2", "69ms"}
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -55,8 +55,8 @@ class DeobfSelect(discord.ui.Select):
             discord.SelectOption(label="WeAreDevs", value="wearedevs", description="Scripts ofuscados com WeAreDevs", emoji="⚡"),
             discord.SelectOption(label="Hercules", value="hercules", description="Scripts ofuscados com Hercules", emoji="🏛️"),
             discord.SelectOption(label="IronVeil", value="ironveil", description="Scripts ofuscados com IronVeil", emoji="🛡️"),
+            discord.SelectOption(label="IronBrew2", value="ironbrew2", description="Scripts ofuscados com IronBrew2", emoji="⚙️"),
             discord.SelectOption(label="69ms", value="69ms", description="Scripts ofuscados com 69ms", emoji="⏱️"),
-            discord.SelectOption(label="Revea", value="revea", description="Scripts ofuscados com Revea", emoji="🔍"),
         ]
         super().__init__(placeholder="Selecione um metodo", options=options)
 
@@ -74,15 +74,15 @@ class DeobfSelect(discord.ui.Select):
             if self.is_url:
                 if mode == "69ms":
                     result = v1.deobfuscate_69ms_from_url(self.code_or_url)
-                elif mode == "revea":
-                    result = v1.deobfuscate_revea_from_url(self.code_or_url)
+                elif mode == "ironbrew2":
+                    result = v1.deobfuscate_ironbrew2_from_url(self.code_or_url)
                 else:
                     result = v1.deobfuscate_from_url(self.code_or_url, mode=mode)
             else:
                 if mode == "69ms":
                     result = v1.deobfuscate_69ms(self.code_or_url)
-                elif mode == "revea":
-                    result = v1.deobfuscate_revea(self.code_or_url)
+                elif mode == "ironbrew2":
+                    result = v1.deobfuscate_ironbrew2(self.code_or_url)
                 else:
                     result = v1.deobfuscate(self.code_or_url, mode=mode)
 
@@ -181,10 +181,10 @@ async def deobf(
         suggestion_label = suggestion.upper()
 
         if detected == "unknown":
-            rec_text = "Nao detectamos o obfuscador. Nao temos um metodo para recomendar, se quiser tentar o 69ms, Revea ou outros fica da sua escolha"
+            rec_text = "Nao detectamos o obfuscador. Nao temos um metodo para recomendar, se quiser tentar o 69ms, IronBrew2 ou outros fica da sua escolha"
             rec_color = 0xF59E0B
         elif detected not in SUPPORTED_METHODS:
-            rec_text = f"Detectamos que o script usa **{suggestion_label}**, mas nao temos um metodo para esse obfuscador. Se quiser tentar o 69ms, Revea ou outros fica da sua escolha"
+            rec_text = f"Detectamos que o script usa **{suggestion_label}**, mas nao temos um metodo para esse obfuscador. Se quiser tentar o 69ms, IronBrew2 ou outros fica da sua escolha"
             rec_color = 0xEF4444
         else:
             rec_text = f"**{suggestion_label}**"
@@ -275,7 +275,7 @@ async def help_cmd(interaction: discord.Interaction):
     )
 
     deobf_text = (
-        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, 69ms, Revea)\n"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, IronBrew2, 69ms)\n"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
