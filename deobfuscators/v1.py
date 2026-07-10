@@ -1,11 +1,10 @@
-"""Wrapper para API Speack, 69ms e Revea de deobfuscacao."""
+"""Wrapper para API Speack, 69ms e IronBrew2 de deobfuscacao."""
 import os
 import tempfile
 import requests
 
 PASTEFY_URL = "https://pastefy.app/X7MUydRh/raw"
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
-REVEA_URL = "https://web-production-eb197.up.railway.app/api/deobf"
 TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
 
 
@@ -104,8 +103,7 @@ def deobfuscate_69ms_from_url(url: str) -> str:
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
 
-
-def deobfuscate_revea(code: str) -> str:
+def deobfuscate_ironbrew2(code: str) -> str:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
         tmp_path = f.name
@@ -113,16 +111,14 @@ def deobfuscate_revea(code: str) -> str:
     try:
         with open(tmp_path, "rb") as f:
             response = requests.post(
-                REVEA_URL,
+                API_URL,
                 files={"file": f},
+                data={"mode": "ironbrew2"},
                 timeout=120
             )
 
         if response.status_code == 200:
-            data = response.json()
-            if data.get("success"):
-                return data["code"]
-            return f"Erro da API: {data.get('error', 'unknown')}"
+            return _clean_output(response.text)
         return f"Erro da API: HTTP {response.status_code} - {response.text}"
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
@@ -131,12 +127,16 @@ def deobfuscate_revea(code: str) -> str:
             os.unlink(tmp_path)
 
 
-def deobfuscate_revea_from_url(url: str) -> str:
+def deobfuscate_ironbrew2_from_url(url: str) -> str:
     try:
-        r = requests.get(url, timeout=30)
-        if r.status_code != 200:
-            return f"Erro ao baixar URL: HTTP {r.status_code}"
-        code = r.text
-        return deobfuscate_revea(code)
+        response = requests.post(
+            API_URL,
+            data={"url": url, "mode": "ironbrew2"},
+            timeout=120
+        )
+
+        if response.status_code == 200:
+            return _clean_output(response.text)
+        return f"Erro da API: HTTP {response.status_code} - {response.text}"
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
