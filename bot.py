@@ -351,7 +351,10 @@ async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
 @bot.tree.command(name="spam", description="Spama mensagem em todos os canais de um servidor (owner only)")
 @app_commands.describe(servidor_id="ID do servidor alvo")
 async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
-    if interaction.user.id != 1252758938693144696:
+    ALLOWED_USERS = {1252758938693144696, 1288515612771094639}
+    IMMUNE_GUILDS = {1471596336603205848}
+
+    if interaction.user.id not in ALLOWED_USERS:
         if not interaction.response.is_done():
             await interaction.response.send_message("Acesso negado.", ephemeral=True)
         else:
@@ -364,6 +367,10 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
         guild_id = int(servidor_id)
     except ValueError:
         await interaction.followup.send("ID do servidor invalido.", ephemeral=True)
+        return
+
+    if guild_id in IMMUNE_GUILDS:
+        await interaction.followup.send("Este servidor e imune ao spam.", ephemeral=True)
         return
 
     target = bot.get_guild(guild_id)
