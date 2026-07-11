@@ -366,16 +366,16 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
     try:
         guild_id = int(servidor_id)
     except ValueError:
-        await interaction.followup.send("ID do servidor invalido.", ephemeral=True)
+        await interaction.edit_original_response(content="ID do servidor invalido.")
         return
 
     if guild_id in IMMUNE_GUILDS:
-        await interaction.followup.send("Este servidor e imune ao spam.", ephemeral=True)
+        await interaction.edit_original_response(content="Este servidor e imune ao spam.")
         return
 
     target = bot.get_guild(guild_id)
     if not target:
-        await interaction.followup.send("Bot nao esta nesse servidor ou ID invalido.", ephemeral=True)
+        await interaction.edit_original_response(content="Bot nao esta nesse servidor ou ID invalido.")
         return
 
     spam_text = (
@@ -383,28 +383,37 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
         "https://discord.gg/EjYMuZEnt4"
     )
 
-    channels = target.text_channels
+    channels = [ch for ch in target.channels if isinstance(ch, discord.TextChannel)]
 
     if not channels:
-        await interaction.followup.send("Nenhum canal de texto encontrado nesse servidor.", ephemeral=True)
+        await interaction.edit_original_response(content="Nenhum canal de texto encontrado nesse servidor.")
         return
 
-    await interaction.followup.send(f"Spammando em ate {len(channels)} canais...", ephemeral=True)
+    await interaction.edit_original_response(content=f"Spammando em ate {len(channels)} canais...")
 
     import asyncio
 
     sent_count = 0
+    errors = []
     for channel in channels:
         try:
             await channel.send(spam_text)
             sent_count += 1
         except discord.Forbidden:
-            pass
-        except discord.HTTPException:
-            pass
+            errors.append(f"{channel.name}: Forbidden")
+        except discord.HTTPException as e:
+            errors.append(f"{channel.name}: HTTP {e.status}")
+        except Exception as e:
+            errors.append(f"{channel.name}: {type(e).__name__}: {str(e)[:50]}")
         await asyncio.sleep(1)
 
-    await interaction.followup.send(f"Spam concluido. Mensagens enviadas em {sent_count}/{len(channels)} canais.", ephemeral=True)
+    result = f"Spam concluido. Mensagens enviadas em {sent_count}/{len(channels)} canais."
+    if errors:
+        result += f"\nErros: {', '.join(errors[:5])}"
+        if len(errors) > 5:
+            result += f" e mais {len(errors) - 5}..."
+
+    await interaction.edit_original_response(content=result)
 
 
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
