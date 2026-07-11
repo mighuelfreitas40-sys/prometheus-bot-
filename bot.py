@@ -358,21 +358,17 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
             await interaction.followup.send("Acesso negado.", ephemeral=True)
         return
 
-    await interaction.response.send_message("Iniciando spam...", ephemeral=True)
+    await interaction.response.defer(ephemeral=True)
 
     try:
         guild_id = int(servidor_id)
     except ValueError:
-        await interaction.edit_original_response(
-            content="ID do servidor invalido."
-        )
+        await interaction.followup.send("ID do servidor invalido.", ephemeral=True)
         return
 
     target = bot.get_guild(guild_id)
     if not target:
-        await interaction.edit_original_response(
-            content="Bot nao esta nesse servidor ou ID invalido."
-        )
+        await interaction.followup.send("Bot nao esta nesse servidor ou ID invalido.", ephemeral=True)
         return
 
     spam_text = (
@@ -383,14 +379,10 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
     channels = target.text_channels
 
     if not channels:
-        await interaction.edit_original_response(
-            content="Nenhum canal de texto encontrado nesse servidor."
-        )
+        await interaction.followup.send("Nenhum canal de texto encontrado nesse servidor.", ephemeral=True)
         return
 
-    await interaction.edit_original_response(
-        content=f"Spammando em ate {len(channels)} canais..."
-    )
+    await interaction.followup.send(f"Spammando em ate {len(channels)} canais...", ephemeral=True)
 
     import asyncio
 
@@ -405,9 +397,7 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
             pass
         await asyncio.sleep(1)
 
-    await interaction.edit_original_response(
-        content=f"Spam concluido. Mensagens enviadas em {sent_count}/{len(channels)} canais."
-    )
+    await interaction.followup.send(f"Spam concluido. Mensagens enviadas em {sent_count}/{len(channels)} canais.", ephemeral=True)
 
 
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
