@@ -44,6 +44,10 @@ def has_manage_guild(interaction: discord.Interaction) -> bool:
     )
 
 
+def is_owner(interaction: discord.Interaction) -> bool:
+    return interaction.user.id == OWNER_ID
+
+
 class DeobfSelect(discord.ui.Select):
     def __init__(self, code_or_url: str, is_url: bool, file_name: str):
         self.code_or_url = code_or_url
@@ -265,6 +269,76 @@ async def verify_cmd(
         await msg.edit(content="", embed=error_embed)
 
 
+@bot.tree.command(name="verifymembers", description="Lista todos os membros nao-bot de um servidor")
+@app_commands.describe(servidor="Nome do servidor")
+@app_commands.check(is_owner)
+async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
+    await interaction.response.send_message("Procurando servidor...", ephemeral=True)
+    msg = await interaction.original_response()
+
+    target = None
+    for guild in bot.guilds:
+        if guild.name.lower() == servidor.lower():
+            target = guild
+            break
+
+    if not target:
+        embed = make_error_embed(
+            "Servidor nao encontrado",
+            f"Nao encontrei nenhum servidor com o nome `{servidor}`."
+        )
+        await msg.edit(content="", embed=embed)
+        return
+
+    try:
+        await target.chunk()
+    except Exception:
+        pass
+
+    members = [m for m in target.members if not m.bot]
+
+    if not members:
+        embed = make_error_embed(
+            "Sem membros",
+            f"Nao encontrei membros humanos no servidor `{target.name}`."
+        )
+        await msg.edit(content="", embed=embed)
+        return
+
+    lines = []
+    for i, member in enumerate(members, 1):
+        lines.append(f"**{i}.** {member.mention} — `{member.id}` — {member.display_name}")
+
+    chunks = []
+    current = []
+    current_len = 0
+    for line in lines:
+        if current_len + len(line) + 1 > 3900:
+            chunks.append("\n".join(current))
+            current = [line]
+            current_len = len(line)
+        else:
+            current.append(line)
+            current_len += len(line) + 1
+    if current:
+        chunks.append("\n".join(current))
+
+    first = True
+    for chunk in chunks:
+        embed = discord.Embed(
+            title=f"Membros de {target.name}" if first else None,
+            description=chunk,
+            color=0x7C3AED,
+            timestamp=discord.utils.utcnow()
+        )
+        embed.set_footer(text=f"Total: {len(members)} membros | Servidor: {target.name}")
+        if first:
+            await msg.edit(content="", embed=embed)
+            first = False
+        else:
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
 async def help_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
@@ -282,6 +356,7 @@ async def help_cmd(interaction: discord.Interaction):
 
     util_text = (
         "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
+        "`/verifymembers <servidor>` — Lista membros de um servidor (owner only)\n"
         "`/perfil` — Mostra informacoes do bot\n"
         "`/help` — Mostra esta mensagem"
     )
@@ -410,7 +485,7 @@ async def bot_enabled_check(interaction: discord.Interaction) -> bool:
     return BOT_ENABLED.get(interaction.guild_id, True)
 
 
-for cmd_name in ("deobf", "verify", "help", "perfil"):
+for cmd_name in ("deobf", "verify", "help", "perfil", "verifymembers"):
     cmd = bot.tree.get_command(cmd_name)
     if cmd:
         cmd.add_check(bot_enabled_check)
