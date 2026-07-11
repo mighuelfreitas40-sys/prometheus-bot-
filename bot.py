@@ -305,6 +305,14 @@ async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
         await msg.edit(content="", embed=embed)
         return
 
+    me = target.me
+    perms = me.guild_permissions
+    perm_lines = []
+    for perm, value in perms:
+        if value:
+            perm_lines.append(f"`{perm}`")
+    perm_text = ", ".join(perm_lines) if perm_lines else "Nenhuma permissao ativa"
+
     lines = []
     for i, member in enumerate(members, 1):
         lines.append(f"**{i}.** {member.mention} — `{member.id}` — {member.display_name}")
@@ -331,6 +339,7 @@ async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
             color=0x7C3AED,
             timestamp=discord.utils.utcnow()
         )
+        embed.add_field(name="Permissoes do bot", value=perm_text, inline=False)
         embed.set_footer(text=f"Total: {len(members)} membros | Servidor: {target.name}")
         if first:
             await msg.edit(content="", embed=embed)
