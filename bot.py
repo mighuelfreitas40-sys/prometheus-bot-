@@ -139,6 +139,71 @@ class DeobfView(discord.ui.View):
         self.add_item(DeobfSelect(code_or_url, is_url, file_name))
 
 
+class BypassSelect(discord.ui.Select):
+    def __init__(self, url: str):
+        self.target_url = url
+        options = [
+            discord.SelectOption(label="Lootbas", value="lootbas", description="Bypass via Lootbas", emoji="🔗"),
+        ]
+        super().__init__(placeholder="Selecione um metodo", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        method = self.values[0]
+        label = method.upper()
+
+        await interaction.response.send_message(
+            f"Executando bypass com **{label}**...",
+            ephemeral=False
+        )
+        msg = await interaction.original_response()
+
+        try:
+            result = v1.bypass_url(self.target_url, method=method)
+
+            if result.startswith("Erro"):
+                embed = make_error_embed(
+                    "Falha no Bypass",
+                    f"Bypass **{label}** falhou: {result}"
+                )
+                await msg.edit(content="", embed=embed)
+                return
+
+            dm_sent = False
+            try:
+                dm = await interaction.user.create_dm()
+                await dm.send(f"Bypass **{label}** concluido! URL original: `{self.target_url}`
+Resultado: {result}")
+                dm_sent = True
+            except discord.Forbidden:
+                pass
+
+            if dm_sent:
+                await msg.edit(
+                    content=f"Bypass concluido e enviado na DM de {interaction.user.mention}!"
+                )
+            else:
+                await msg.edit(
+                    content=f"Bypass **{label}** concluido para {interaction.user.mention}! (DM bloqueada, enviado aqui)
+URL original: `{self.target_url}`
+Resultado: {result}"
+                )
+
+            await logs.send_log(
+                bot, interaction.guild_id, interaction.user,
+                f"bypass-{method}", self.target_url, result
+            )
+
+        except Exception as e:
+            embed = make_error_embed("Erro Inesperado", str(e))
+            await msg.edit(content="", embed=embed)
+
+
+class BypassView(discord.ui.View):
+    def __init__(self, url: str):
+        super().__init__(timeout=60)
+        self.add_item(BypassSelect(url))
+
+
 @bot.tree.command(name="deobf", description="Deobfusca codigo Lua")
 @app_commands.describe(
     url="URL do codigo ofuscado",
@@ -212,6 +277,24 @@ async def deobf(
     except Exception as e:
         embed = make_error_embed("Erro", str(e))
         await msg.edit(content="", embed=embed)
+
+
+@bot.tree.command(name="bypass", description="Bypass de URL protegida")
+@app_commands.describe(url="URL para bypass")
+async def bypass_cmd(interaction: discord.Interaction, url: str):
+    await interaction.response.send_message("Processando...", ephemeral=False)
+    msg = await interaction.original_response()
+
+    embed = discord.Embed(
+        title="Selecione um metodo",
+        description=f"**URL alvo:** `{url}`",
+        color=0x7C3AED,
+        timestamp=discord.utils.utcnow()
+    )
+    embed.set_footer(text=f"Solicitado por {interaction.user}")
+
+    view = BypassView(url)
+    await msg.edit(content="", embed=embed, view=view)
 
 
 @bot.tree.command(name="verify", description="Verifica qual obfuscador foi usado no codigo")
@@ -392,6 +475,11 @@ async def help_cmd(interaction: discord.Interaction):
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
 
+    bypass_text = (
+        "`/bypass <url>` — Bypass de URL protegida (Lootbas)"
+    )
+    embed.add_field(name="Bypass", value=bypass_text, inline=False)
+
     util_text = (
         "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
         "`/verifymembers <servidor>` — Lista membros de um servidor (owner only)\n"
@@ -524,7 +612,7 @@ async def bot_enabled_check(interaction: discord.Interaction) -> bool:
     return BOT_ENABLED.get(interaction.guild_id, True)
 
 
-for cmd_name in ("deobf", "verify", "help", "perfil", "verifymembers", "kickbot"):
+for cmd_name in ("deobf", "verify", "help", "perfil", "verifymembers", "kickbot", "bypass"):
     cmd = bot.tree.get_command(cmd_name)
     if cmd:
         cmd.add_check(bot_enabled_check)
