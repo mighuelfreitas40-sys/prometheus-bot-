@@ -1,10 +1,11 @@
-"""Wrapper para API Speack, 69ms e IronBrew2 de deobfuscacao."""
+"""Wrapper para API Speack, 69ms, IronBrew2 e bypass de URLs."""
 import os
 import tempfile
 import requests
 
 PASTEFY_URL = "https://pastefy.app/X7MUydRh/raw"
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
+BYPASS_API_URL = "https://lootlabs-api-production.up.railway.app/bypass"
 TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
 
 
@@ -103,6 +104,7 @@ def deobfuscate_69ms_from_url(url: str) -> str:
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
 
+
 def deobfuscate_ironbrew2(code: str) -> str:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
@@ -138,5 +140,22 @@ def deobfuscate_ironbrew2_from_url(url: str) -> str:
         if response.status_code == 200:
             return _clean_output(response.text)
         return f"Erro da API: HTTP {response.status_code} - {response.text}"
+    except requests.RequestException as e:
+        return f"Erro de conexao: {e}"
+
+
+def bypass_url(url: str, method: str = "lootbas") -> str:
+    try:
+        response = requests.post(
+            BYPASS_API_URL,
+            json={"url": url, "method": method},
+            timeout=60
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            result = data.get("result") or data.get("url") or data.get("bypassed_url") or str(data)
+            return result
+        return f"Erro da API: HTTP {response.status_code} - {response.text[:500]}"
     except requests.RequestException as e:
         return f"Erro de conexao: {e}"
