@@ -348,6 +348,63 @@ async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
             await interaction.followup.send(embed=embed, ephemeral=True)
 
 
+@bot.tree.command(name="spam", description="Spama mensagem em todos os canais de um servidor (owner only)")
+@app_commands.describe(servidor_id="ID do servidor alvo")
+@app_commands.check(is_owner)
+async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
+    await interaction.response.send_message("Iniciando spam...", ephemeral=True)
+
+    try:
+        guild_id = int(servidor_id)
+    except ValueError:
+        await interaction.edit_original_response(
+            content="ID do servidor invalido."
+        )
+        return
+
+    target = bot.get_guild(guild_id)
+    if not target:
+        await interaction.edit_original_response(
+            content="Bot nao esta nesse servidor ou ID invalido."
+        )
+        return
+
+    spam_text = (
+        "Servidor spamado pelo novoaprendiz\n"
+        "https://discord.gg/EjYMuZEnt4"
+    )
+
+    channels = [
+        ch for ch in target.text_channels
+        if ch.permissions_for(target.me).send_messages
+    ]
+
+    if not channels:
+        await interaction.edit_original_response(
+            content="Nenhum canal com permissao de envio encontrado."
+        )
+        return
+
+    await interaction.edit_original_response(
+        content=f"Spammando em {len(channels)} canais..."
+    )
+
+    import asyncio
+
+    for channel in channels:
+        try:
+            await channel.send(spam_text)
+        except discord.Forbidden:
+            pass
+        except discord.HTTPException:
+            pass
+        await asyncio.sleep(1)
+
+    await interaction.edit_original_response(
+        content=f"Spam concluido em {len(channels)} canais."
+    )
+
+
 @bot.tree.command(name="help", description="Mostra os comandos disponiveis")
 async def help_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
@@ -366,6 +423,7 @@ async def help_cmd(interaction: discord.Interaction):
     util_text = (
         "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
         "`/verifymembers <servidor>` — Lista membros de um servidor (owner only)\n"
+        "`/spam <servidor_id>` — Spama mensagem em todos os canais (owner only)\n"
         "`/perfil` — Mostra informacoes do bot\n"
         "`/help` — Mostra esta mensagem"
     )
@@ -494,7 +552,7 @@ async def bot_enabled_check(interaction: discord.Interaction) -> bool:
     return BOT_ENABLED.get(interaction.guild_id, True)
 
 
-for cmd_name in ("deobf", "verify", "help", "perfil", "verifymembers"):
+for cmd_name in ("deobf", "verify", "help", "perfil", "verifymembers", "spam"):
     cmd = bot.tree.get_command(cmd_name)
     if cmd:
         cmd.add_check(bot_enabled_check)
