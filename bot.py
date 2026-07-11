@@ -350,8 +350,14 @@ async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
 
 @bot.tree.command(name="spam", description="Spama mensagem em todos os canais de um servidor (owner only)")
 @app_commands.describe(servidor_id="ID do servidor alvo")
-@app_commands.check(is_owner)
 async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
+    if interaction.user.id != 1252758938693144696:
+        if not interaction.response.is_done():
+            await interaction.response.send_message("Acesso negado.", ephemeral=True)
+        else:
+            await interaction.followup.send("Acesso negado.", ephemeral=True)
+        return
+
     await interaction.response.send_message("Iniciando spam...", ephemeral=True)
 
     try:
