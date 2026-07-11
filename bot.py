@@ -380,26 +380,25 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
         "https://discord.gg/EjYMuZEnt4"
     )
 
-    channels = [
-        ch for ch in target.text_channels
-        if ch.permissions_for(target.me).send_messages
-    ]
+    channels = target.text_channels
 
     if not channels:
         await interaction.edit_original_response(
-            content="Nenhum canal com permissao de envio encontrado."
+            content="Nenhum canal de texto encontrado nesse servidor."
         )
         return
 
     await interaction.edit_original_response(
-        content=f"Spammando em {len(channels)} canais..."
+        content=f"Spammando em ate {len(channels)} canais..."
     )
 
     import asyncio
 
+    sent_count = 0
     for channel in channels:
         try:
             await channel.send(spam_text)
+            sent_count += 1
         except discord.Forbidden:
             pass
         except discord.HTTPException:
@@ -407,7 +406,7 @@ async def spam_cmd(interaction: discord.Interaction, servidor_id: str):
         await asyncio.sleep(1)
 
     await interaction.edit_original_response(
-        content=f"Spam concluido em {len(channels)} canais."
+        content=f"Spam concluido. Mensagens enviadas em {sent_count}/{len(channels)} canais."
     )
 
 
