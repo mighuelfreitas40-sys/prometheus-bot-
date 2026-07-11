@@ -263,7 +263,9 @@ async def deobf(
         embed = discord.Embed(
             title="Selecione um metodo",
             description=(
-                f"**Obfuscador detectado:** `{detected_display}`\n\n"
+                f"**Obfuscador detectado:** `{detected_display}`
+
+"
                 f"**Metodo recomendado:** {rec_text}"
             ),
             color=rec_color,
@@ -286,7 +288,7 @@ async def bypass_cmd(interaction: discord.Interaction, url: str):
     msg = await interaction.original_response()
 
     embed = discord.Embed(
-        title="Selecione um metodo",
+        title="Qual metodo deseja usar",
         description=f"**URL alvo:** `{url}`",
         color=0x7C3AED,
         timestamp=discord.utils.utcnow()
@@ -405,14 +407,16 @@ async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
     current_len = 0
     for line in lines:
         if current_len + len(line) + 1 > 3900:
-            chunks.append("\n".join(current))
+            chunks.append("
+".join(current))
             current = [line]
             current_len = len(line)
         else:
             current.append(line)
             current_len += len(line) + 1
     if current:
-        chunks.append("\n".join(current))
+        chunks.append("
+".join(current))
 
     first = True
     for chunk in chunks:
@@ -470,7 +474,8 @@ async def help_cmd(interaction: discord.Interaction):
     )
 
     deobf_text = (
-        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, IronBrew2, 69ms)\n"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, IronBrew2, 69ms)
+"
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
@@ -481,17 +486,23 @@ async def help_cmd(interaction: discord.Interaction):
     embed.add_field(name="Bypass", value=bypass_text, inline=False)
 
     util_text = (
-        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado\n"
-        "`/verifymembers <servidor>` — Lista membros de um servidor (owner only)\n"
-        "`/kickbot <servidor_id>` — Kicka o bot de um servidor (owner only)\n"
-        "`/perfil` — Mostra informacoes do bot\n"
+        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado
+"
+        "`/verifymembers <servidor>` — Lista membros de um servidor (owner only)
+"
+        "`/kickbot <servidor_id>` — Kicka o bot de um servidor (owner only)
+"
+        "`/perfil` — Mostra informacoes do bot
+"
         "`/help` — Mostra esta mensagem"
     )
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
 
     admin_text = (
-        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*\n"
-        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*\n"
+        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*
+"
+        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*
+"
         "`/bot <true|false>` — Ativa/desativa o bot *(requer Gerenciar Servidor)*"
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
@@ -508,9 +519,12 @@ async def perfil_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
         title="NvDeobf2",
         description=(
-            f"**Nome:** NvDeobf2\n"
-            f"**Total de Membros:** `{total_members:,}`\n"
-            f"**Total de Servidores:** `{total_guilds:,}`\n"
+            f"**Nome:** NvDeobf2
+"
+            f"**Total de Membros:** `{total_members:,}`
+"
+            f"**Total de Servidores:** `{total_guilds:,}`
+"
             f"**Dono:** <@{OWNER_ID}>"
         ),
         color=0x7C3AED,
@@ -565,7 +579,8 @@ async def servidores_cmd(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="Rank de Servidores",
-        description="\n".join(lines) if lines else "Bot nao esta em nenhum servidor.",
+        description="
+".join(lines) if lines else "Bot nao esta em nenhum servidor.",
         color=0xF39C12,
         timestamp=discord.utils.utcnow()
     )
@@ -620,9 +635,12 @@ for cmd_name in ("deobf", "verify", "help", "perfil", "verifymembers", "kickbot"
 
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
+    synced = await bot.tree.sync()
     print(f"Bot conectado como {bot.user} (ID: {bot.user.id})")
     print(f"Em {len(bot.guilds)} servidores")
+    print(f"Comandos sincronizados: {len(synced)}")
+    for cmd in synced:
+        print(f"  - /{cmd.name}")
     await bot.change_presence(
         activity=discord.Activity(
             type=discord.ActivityType.watching,
