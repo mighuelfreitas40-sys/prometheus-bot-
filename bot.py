@@ -171,8 +171,9 @@ class BypassSelect(discord.ui.Select):
             dm_sent = False
             try:
                 dm = await interaction.user.create_dm()
-                await dm.send(f"Bypass **{label}** concluido! URL original: `{self.target_url}`
-Resultado: {result}")
+                msg_text = f"Bypass **{label}** concluido! URL original: `{self.target_url}`"
+                msg_text += chr(10) + f"Resultado: {result}"
+                await dm.send(msg_text)
                 dm_sent = True
             except discord.Forbidden:
                 pass
@@ -182,11 +183,10 @@ Resultado: {result}")
                     content=f"Bypass concluido e enviado na DM de {interaction.user.mention}!"
                 )
             else:
-                await msg.edit(
-                    content=f"Bypass **{label}** concluido para {interaction.user.mention}! (DM bloqueada, enviado aqui)
-URL original: `{self.target_url}`
-Resultado: {result}"
-                )
+                msg_text = f"Bypass **{label}** concluido para {interaction.user.mention}! (DM bloqueada, enviado aqui)"
+                msg_text += chr(10) + f"URL original: `{self.target_url}`"
+                msg_text += chr(10) + f"Resultado: {result}"
+                await msg.edit(content=msg_text)
 
             await logs.send_log(
                 bot, interaction.guild_id, interaction.user,
@@ -263,9 +263,7 @@ async def deobf(
         embed = discord.Embed(
             title="Selecione um metodo",
             description=(
-                f"**Obfuscador detectado:** `{detected_display}`
-
-"
+                f"**Obfuscador detectado:** `{detected_display}`" + chr(10) + chr(10) +
                 f"**Metodo recomendado:** {rec_text}"
             ),
             color=rec_color,
@@ -407,16 +405,14 @@ async def verifymembers_cmd(interaction: discord.Interaction, servidor: str):
     current_len = 0
     for line in lines:
         if current_len + len(line) + 1 > 3900:
-            chunks.append("
-".join(current))
+            chunks.append(chr(10).join(current))
             current = [line]
             current_len = len(line)
         else:
             current.append(line)
             current_len += len(line) + 1
     if current:
-        chunks.append("
-".join(current))
+        chunks.append(chr(10).join(current))
 
     first = True
     for chunk in chunks:
@@ -474,8 +470,7 @@ async def help_cmd(interaction: discord.Interaction):
     )
 
     deobf_text = (
-        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, IronBrew2, 69ms)
-"
+        "`/deobf <url|arquivo>` — Deobfusca com menu de selecao (Moonsec V3, WeAreDevs, Hercules, IronVeil, IronBrew2, 69ms)" + chr(10) +
         "*Envie URL ou arquivo, apenas um dos dois.*"
     )
     embed.add_field(name="Deobfuscacao", value=deobf_text, inline=False)
@@ -486,23 +481,17 @@ async def help_cmd(interaction: discord.Interaction):
     embed.add_field(name="Bypass", value=bypass_text, inline=False)
 
     util_text = (
-        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado
-"
-        "`/verifymembers <servidor>` — Lista membros de um servidor (owner only)
-"
-        "`/kickbot <servidor_id>` — Kicka o bot de um servidor (owner only)
-"
-        "`/perfil` — Mostra informacoes do bot
-"
+        "`/verify <url|arquivo>` — Detecta qual obfuscador foi usado" + chr(10) +
+        "`/verifymembers <servidor>` — Lista membros de um servidor (owner only)" + chr(10) +
+        "`/kickbot <servidor_id>` — Kicka o bot de um servidor (owner only)" + chr(10) +
+        "`/perfil` — Mostra informacoes do bot" + chr(10) +
         "`/help` — Mostra esta mensagem"
     )
     embed.add_field(name="Utilitarios", value=util_text, inline=False)
 
     admin_text = (
-        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*
-"
-        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*
-"
+        "`/logs <canal>` — Define canal de logs *(requer Gerenciar Servidor)*" + chr(10) +
+        "`/servidores` — Rank de servidores por membros *(requer Gerenciar Servidor)*" + chr(10) +
         "`/bot <true|false>` — Ativa/desativa o bot *(requer Gerenciar Servidor)*"
     )
     embed.add_field(name="Administracao", value=admin_text, inline=False)
@@ -519,12 +508,9 @@ async def perfil_cmd(interaction: discord.Interaction):
     embed = discord.Embed(
         title="NvDeobf2",
         description=(
-            f"**Nome:** NvDeobf2
-"
-            f"**Total de Membros:** `{total_members:,}`
-"
-            f"**Total de Servidores:** `{total_guilds:,}`
-"
+            f"**Nome:** NvDeobf2" + chr(10) +
+            f"**Total de Membros:** `{total_members:,}`" + chr(10) +
+            f"**Total de Servidores:** `{total_guilds:,}`" + chr(10) +
             f"**Dono:** <@{OWNER_ID}>"
         ),
         color=0x7C3AED,
@@ -579,8 +565,7 @@ async def servidores_cmd(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="Rank de Servidores",
-        description="
-".join(lines) if lines else "Bot nao esta em nenhum servidor.",
+        description=chr(10).join(lines) if lines else "Bot nao esta em nenhum servidor.",
         color=0xF39C12,
         timestamp=discord.utils.utcnow()
     )
