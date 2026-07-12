@@ -504,6 +504,7 @@ async def help_cmd(interaction: discord.Interaction):
 async def perfil_cmd(interaction: discord.Interaction):
     total_members = sum(g.member_count or 0 for g in bot.guilds)
     total_guilds = len(bot.guilds)
+    total_deobfs = logs.get_total_deobfs()
 
     embed = discord.Embed(
         title="NvDeobf2",
@@ -511,6 +512,7 @@ async def perfil_cmd(interaction: discord.Interaction):
             f"**Nome:** NvDeobf2" + chr(10) +
             f"**Total de Membros:** `{total_members:,}`" + chr(10) +
             f"**Total de Servidores:** `{total_guilds:,}`" + chr(10) +
+            f"**Total de Deobfs:** `{total_deobfs:,}`" + chr(10) +
             f"**Dono:** <@{OWNER_ID}>"
         ),
         color=0x7C3AED,
@@ -539,11 +541,7 @@ async def servidores_cmd(interaction: discord.Interaction):
 
     guilds_data = []
     for guild in bot.guilds:
-        try:
-            await guild.chunk()
-            count = guild.member_count or len(guild.members)
-        except Exception:
-            count = guild.member_count or 0
+        count = guild.member_count or 0
 
         invite_link = "N/A"
         try:
