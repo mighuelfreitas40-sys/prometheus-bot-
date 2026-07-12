@@ -91,6 +91,9 @@ class DeobfSelect(discord.ui.Select):
                     result = v1.deobfuscate(self.code_or_url, mode=mode)
 
             if result == v1.BLOCKED_MESSAGE:
+                await v1._send_blocked_log(
+                    bot, interaction.guild_id, interaction.user, self.file_name
+                )
                 embed = make_error_embed(
                     "Deobfuscacao Bloqueada",
                     result
