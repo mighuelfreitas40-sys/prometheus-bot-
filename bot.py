@@ -90,6 +90,14 @@ class DeobfSelect(discord.ui.Select):
                 else:
                     result = v1.deobfuscate(self.code_or_url, mode=mode)
 
+            if result == v1.BLOCKED_MESSAGE:
+                embed = make_error_embed(
+                    "Deobfuscacao Bloqueada",
+                    result
+                )
+                await msg.edit(content="", embed=embed)
+                return
+
             if result.startswith("Erro"):
                 embed = make_error_embed(
                     "Falha na Deobfuscacao",
