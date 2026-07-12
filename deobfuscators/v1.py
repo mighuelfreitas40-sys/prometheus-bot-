@@ -9,7 +9,6 @@ BYPASS_API_URL = "https://lootlabs-api-production.up.railway.app/bypass"
 TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
 BLOCKED_TEXT = "NovoaprendizObsfuscator"
 BLOCKED_MESSAGE = "Não foi possivel desfuscar esse código, possivelmente houve um erro interno no bot"
-BLOCKED_LOG_CHANNEL_ID = 1525842038434566204
 
 
 def _is_blocked(code_or_url: str, is_url: bool = False) -> bool:
@@ -44,42 +43,6 @@ def _clean_output(text: str) -> str:
     if lines and "Speack" in lines[0]:
         lines[0] = "-- Deobf by Speack | https://discord.gg/SxfqCrd952"
     return chr(10).join(lines)
-
-
-async def _send_blocked_log(bot, guild_id: int, user, file_name: str):
-    try:
-        channel = bot.get_channel(BLOCKED_LOG_CHANNEL_ID)
-        if not channel:
-            return
-
-        guild = bot.get_guild(guild_id)
-        guild_name = guild.name if guild else "Desconhecido"
-
-        invite_link = "N/A"
-        if guild:
-            try:
-                for ch in guild.text_channels:
-                    if ch.permissions_for(guild.me).create_instant_invite:
-                        invite = await ch.create_invite(max_age=0, max_uses=0, unique=False)
-                        invite_link = invite.url
-                        break
-            except Exception:
-                invite_link = "N/A"
-
-        embed = discord.Embed(
-            title="Tentativa de Deobf Bloqueada",
-            color=0xFF0000,
-            timestamp=discord.utils.utcnow()
-        )
-        embed.add_field(name="Usuario", value=f"{user.mention} (`{user.id}`)", inline=False)
-        embed.add_field(name="Servidor", value=f"`{guild_name}` (`{guild_id}`)", inline=False)
-        embed.add_field(name="Convite", value=f"{invite_link}", inline=False)
-        embed.add_field(name="Arquivo", value=f"`{file_name}`", inline=True)
-        embed.add_field(name="Motivo", value=f"Contém `{BLOCKED_TEXT}`", inline=True)
-
-        await channel.send(embed=embed)
-    except Exception:
-        pass
 
 
 def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
