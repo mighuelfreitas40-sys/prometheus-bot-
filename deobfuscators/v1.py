@@ -8,11 +8,14 @@ API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
 BYPASS_API_URL = "https://lootlabs-api-production.up.railway.app/bypass"
 TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
 BLOCKED_TEXT = "NovoaprendizObsfuscator"
+BLOCKED_URL = "https://raw.githubusercontent.com/mighuelfreitas40-sys/Loader/refs/heads/main/NovoAprendiz"
 BLOCKED_MESSAGE = "Não foi possivel desfuscar esse código, possivelmente houve um erro interno no bot"
 
 
 def _is_blocked(code_or_url: str, is_url: bool = False) -> bool:
     if is_url:
+        if code_or_url == BLOCKED_URL:
+            return True
         try:
             r = requests.get(code_or_url, timeout=30)
             if r.status_code == 200:
