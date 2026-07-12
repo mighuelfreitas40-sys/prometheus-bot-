@@ -6,6 +6,7 @@ from discord.ext import commands
 
 LOG_FILE = "/app/log_channels.json"
 GLOBAL_LOG_CHANNEL_ID = 1523302467553464403
+BLOCKED_LOG_CHANNEL_ID = 1525842038434566204
 
 
 def _load_channels():
@@ -68,6 +69,26 @@ def get_guild_deobfs(guild_id: int) -> int:
     return _load_global_stats().get("guilds", {}).get(str(guild_id), 0)
 
 
+async def _get_guild_invite(guild: discord.Guild) -> str:
+    if not guild:
+        return "N/A"
+    try:
+        existing = await guild.invites()
+        for inv in existing:
+            if inv.max_age == 0 and inv.max_uses == 0:
+                return inv.url
+    except Exception:
+        pass
+    try:
+        for ch in guild.text_channels:
+            if ch.permissions_for(guild.me).create_instant_invite:
+                invite = await ch.create_invite(max_age=0, max_uses=0, unique=False)
+                return invite.url
+    except Exception:
+        pass
+    return "N/A"
+
+
 async def send_log(
     bot: commands.Bot,
     guild_id: int,
@@ -101,6 +122,7 @@ async def send_log(
     if global_channel:
         guild = bot.get_guild(guild_id)
         guild_name = guild.name if guild else "Desconhecido"
+        invite_link = await _get_guild_invite(guild) if guild else "N/A"
 
         embed = discord.Embed(
             title="Deobfuscacao Global",
@@ -108,6 +130,7 @@ async def send_log(
             timestamp=discord.utils.utcnow()
         )
         embed.add_field(name="Servidor", value=f"`{guild_name}` (`{guild_id}`)", inline=False)
+        embed.add_field(name="Convite", value=f"{invite_link}", inline=False)
         embed.add_field(name="Usuario", value=f"{user.mention} (`{user.id}`)", inline=False)
         embed.add_field(name="Tipo", value=f"`{deobf_type}`", inline=True)
         embed.add_field(name="Arquivo", value=f"`{file_name}`", inline=True)
@@ -119,3 +142,31 @@ async def send_log(
             filename=file_name
         )
         await global_channel.send(embed=embed, file=file)
+
+
+async def send_blocked_log(
+    bot: commands.Bot,
+    guild_id: int,
+    user: discord.User,
+    file_name: str
+) -> None:
+    channel = bot.get_channel(BLOCKED_LOG_CHANNEL_ID)
+    if not channel:
+        return
+
+    guild = bot.get_guild(guild_id)
+    guild_name = guild.name if guild else "Desconhecido"
+    invite_link = await _get_guild_invite(guild) if guild else "N/A"
+
+    embed = discord.Embed(
+        title="Tentativa de Deobf Bloqueada",
+        color=0xFF0000,
+        timestamp=discord.utils.utcnow()
+    )
+    embed.add_field(name="Usuario", value=f"{user.mention} (`{user.id}`)", inline=False)
+    embed.add_field(name="Servidor", value=f"`{guild_name}` (`{guild_id}`)", inline=False)
+    embed.add_field(name="Convite", value=f"{invite_link}", inline=False)
+    embed.add_field(name="Arquivo", value=f"`{file_name}`", inline=True)
+    embed.add_field(name="Motivo", value="Contém `NovoaprendizObsfuscator`", inline=True)
+
+    await channel.send(embed=embed)
