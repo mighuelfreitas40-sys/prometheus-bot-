@@ -7,6 +7,23 @@ PASTEFY_URL = "https://pastefy.app/X7MUydRh/raw"
 API_URL = "https://api-speack.onrender.com/speack/api/v1/deobf"
 BYPASS_API_URL = "https://lootlabs-api-production.up.railway.app/bypass"
 TOKEN_69MS = "ncj-ndh-kwm-wqj-3x4-lunar-is-the-best"
+BLOCKED_TEXT = "NovoaprendizObsfuscator"
+BLOCKED_MESSAGE = "Não foi possivel desfuscar esse código, possivelmente houve um erro interno no bot"
+
+
+def _is_blocked(code_or_url: str, is_url: bool = False) -> bool:
+    if is_url:
+        try:
+            r = requests.get(code_or_url, timeout=30)
+            if r.status_code == 200:
+                code = r.text
+            else:
+                return False
+        except Exception:
+            return False
+    else:
+        code = code_or_url
+    return BLOCKED_TEXT in code
 
 
 def _get_69ms_endpoint() -> str:
@@ -29,6 +46,9 @@ def _clean_output(text: str) -> str:
 
 
 def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
+    if _is_blocked(code):
+        return BLOCKED_MESSAGE
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
         tmp_path = f.name
@@ -52,6 +72,9 @@ def deobfuscate(code: str, mode: str = "moonsecv3") -> str:
 
 
 def deobfuscate_from_url(url: str, mode: str = "moonsecv3") -> str:
+    if _is_blocked(url, is_url=True):
+        return BLOCKED_MESSAGE
+
     try:
         response = requests.post(
             API_URL,
@@ -67,6 +90,9 @@ def deobfuscate_from_url(url: str, mode: str = "moonsecv3") -> str:
 
 
 def deobfuscate_69ms(code: str) -> str:
+    if _is_blocked(code):
+        return BLOCKED_MESSAGE
+
     endpoint = _get_69ms_endpoint()
     if not endpoint:
         return "Erro: nao foi possivel obter o endpoint atual da API 69ms."
@@ -95,6 +121,9 @@ def deobfuscate_69ms(code: str) -> str:
 
 
 def deobfuscate_69ms_from_url(url: str) -> str:
+    if _is_blocked(url, is_url=True):
+        return BLOCKED_MESSAGE
+
     try:
         r = requests.get(url, timeout=30)
         if r.status_code != 200:
@@ -106,6 +135,9 @@ def deobfuscate_69ms_from_url(url: str) -> str:
 
 
 def deobfuscate_ironbrew2(code: str) -> str:
+    if _is_blocked(code):
+        return BLOCKED_MESSAGE
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".lua", delete=False) as f:
         f.write(code)
         tmp_path = f.name
@@ -130,6 +162,9 @@ def deobfuscate_ironbrew2(code: str) -> str:
 
 
 def deobfuscate_ironbrew2_from_url(url: str) -> str:
+    if _is_blocked(url, is_url=True):
+        return BLOCKED_MESSAGE
+
     try:
         response = requests.post(
             API_URL,
