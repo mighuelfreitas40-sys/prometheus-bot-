@@ -95,7 +95,7 @@ class DeobfSelect(discord.ui.Select):
                     bot, interaction.guild_id, interaction.user, self.file_name
                 )
                 embed = make_error_embed(
-                    "Deobfuscacao Bloqueada",
+                    "Erro interno do bot",
                     result
                 )
                 await msg.edit(content="", embed=embed)
