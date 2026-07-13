@@ -8,6 +8,9 @@ from discord.ext import commands
 from deobfuscators import v1
 from modules import verify, logs
 
+from dotenv import load_dotenv
+load_dotenv()
+
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 SUPPORTED_METHODS = {"moonsecv3", "wearedevs", "hercules", "ironveil", "ironbrew2", "69ms"}
